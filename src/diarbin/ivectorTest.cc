@@ -69,7 +69,9 @@ int main(int argc, char *argv[]) {
     for (; !label_reader.Done(); label_reader.Next()) {
         Segments allSegments(label_reader.Value(), label_reader.Key());
         Segments speechSegments = allSegments.GetSpeechSegments();
-        speechSegments.ExtractIvectors(feature_reader.Value(),posterior_reader.Value(label_reader.Key()),extractor);
+        speechSegments.ExtractIvectors(feature_reader.Value(),
+                                        posterior_reader.Value(label_reader.Key()),
+                                        extractor);
         speechSegments.NormalizeIvectors();
 
         std::vector< Vector<double> > ivectorCollect;
@@ -80,30 +82,32 @@ int main(int argc, char *argv[]) {
         Vector<double> totalMean;
         computeMean(ivectorCollect, totalMean);
         SpMatrix<double> totalCov = computeCovariance(ivectorCollect, 
-                                   totalMean);
+                                                        totalMean);
         for (size_t i=0; i<loopMax;i++){
             for (size_t j=0; j<loopMax;j++){
                 std::string jLabel = speechSegments.SegKey(j);
                 std::string iLabel = speechSegments.SegKey(i);
-                if (i != j && (iLabel == jLabel) && iLabel != "nonspeech" && iLabel != "overlap" && jLabel != "nonspeech" && jLabel != "overlap") {
+                if (i != j && (iLabel == jLabel) && iLabel != "nonspeech" &&
+                    iLabel != "overlap" && jLabel != "nonspeech" && jLabel != "overlap") {
                     const Vector<double> &iIvector = speechSegments.GetIvector(i);
                     const Vector<double> &jIvector = speechSegments.GetIvector(j);
-                    BaseFloat dotProduct = VecVec(iIvector, jIvector);
+                    BaseFloat dotProduct = 0;//VecVec(iIvector, jIvector);
                     //TrueScore += dotProduct; TureCount++;
-                    //KALDI_LOG << "TRUE Target: " << iSegmentKey << " vs " << jSegmentKey << ":" << dot_prod;
                     //BaseFloat distance = mahalanobisDistance(iIvector, jIvector, totalCov);
-                    BaseFloat distance = conditionalBayesDistance(iIvector, jIvector, withinCovariance);
+                    BaseFloat distance = conditionalBayesDistance(iIvector, jIvector, 
+                                                                    withinCovariance);
                     KALDI_LOG << "TRUE Mahalanobis scores: " << distance;
                     KALDI_LOG << "TRUE Cosine scores: " << dotProduct;
                 }
-                if (i != j && iLabel != jLabel && iLabel != "nonspeech" && iLabel != "overlap" && jLabel != "nonspeech" && jLabel != "overlap") {
+                if (i != j && iLabel != jLabel && iLabel != "nonspeech" &&
+                    iLabel != "overlap" && jLabel != "nonspeech" && jLabel != "overlap") {
                     const Vector<double> &iIvector = speechSegments.GetIvector(i);
                     const Vector<double> &jIvector = speechSegments.GetIvector(j);
-                    BaseFloat dotProduct = VecVec(iIvector, jIvector);
+                    BaseFloat dotProduct = 0;//VecVec(iIvector, jIvector);
                     //FalseScore += dotProduct; FalseCount++;
-                    //KALDI_LOG << "FALSE ERROR: " << iSegmentKey << " vs " << jSegmentKey << ":" << dot_prod;
                     //BaseFloat distance = mahalanobisDistance(iIvector, jIvector, totalCov);
-                    BaseFloat distance = conditionalBayesDistance(iIvector, jIvector, withinCovariance);
+                    BaseFloat distance = conditionalBayesDistance(iIvector, jIvector, 
+                                                                    withinCovariance);
                     KALDI_LOG << "FALSE Mahalanobis scores: " << distance;
                     KALDI_LOG << "FALSE Cosine scores: " << dotProduct;
                 }

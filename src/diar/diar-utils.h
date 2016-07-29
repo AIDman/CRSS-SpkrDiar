@@ -53,9 +53,9 @@ public:
 	void Append(segUnit& segment);
 	void SetLabel(int32 index, std::string label);
 	void Read(const std::string& segments_rxfilename);
-	void ReadIvectors(const std::string& ivector_rxfilename); // NOTE: Improvement needed for parallel processing
+	void ReadIvectors(const std::string& ivector_rxfilename); 
 	void Write(const std::string& segments_dirname);
-	void WriteIvectors(const std::string& ivector_wxfilename); // NOTE: Improvement needed for parallel processing
+	void WriteIvectors(const std::string& ivector_wxfilename); 
 private:
 	segType _segmentList;
 	std::string _uttid;
@@ -93,17 +93,17 @@ template<class T>
 SpMatrix<T> computeWithinCovariance(const std::vector< Vector<T> >& vectorOfFeatures,
 									const std::vector<std::string>& vectorOfLabels) {
 	// Calculate: W  = (1/N) Sum_{s=1}_{S} Sum_{i=1}_{Ns} (w_i - m_s)((w_i - m_s)^T)
-	// inputs contain all development i-vectors and a vector of the same length
-	// that contains the corresponding speaker for each i-vector.
+	// inputs include development i-vectors and a vector of the same length
+	// that contains strings corresponding to speaker/session info for each i-vector.
 	size_t N = vectorOfLabels.size(); 
 	if (N != vectorOfFeatures.size()) {
 		KALDI_ERR << "Number of labels " << N 
-					<< " does NOT match number of i-vectors "
-					<< vectorOfFeatures.size();  
+				  << " does NOT match number of i-vectors "
+				  << vectorOfFeatures.size();  
 	}
 
-	// count number of instances for each speakers while 
-	// calculating means. 
+	// count number of instances for each speaker while 
+	// calculating means (vector sums). 
 	// We don't want to use a class if we don't have 
 	// enough i-vectors for the corresponding speaker.
 	std::map< std::string, int > spkr_count;
@@ -121,14 +121,22 @@ SpMatrix<T> computeWithinCovariance(const std::vector< Vector<T> >& vectorOfFeat
 	int32 ivecDim = spkr_means[vectorOfLabels[0]].Dim();
 	// We still need to divide the means by number of utterances for
 	// each speaker.
-	for (std::map<std::string,int>::iterator i = spkr_count.begin(); i != spkr_count.end(); i++) {
+	for (std::map<std::string,int>::iterator i = spkr_count.begin(); 
+		 i != spkr_count.end(); i++) {
 		Vector<T> z(ivecDim);
 		z.CopyFromVec(spkr_means[i->first]);
 		spkr_means[i->first].SetZero();
 		spkr_means[i->first].AddVec(1./i->second, z);
 	}
 	
-	int NminSpkrs = 0; 
+	int32 NminSpkrs = 15;
+	int32 NUsedSamples = 0;
+	for (size_t i = 0; i < N; i++) {
+		if (spkr_count[vectorOfLabels[i]] > NminSpkrs) {
+			NUsedSamples++;
+		}
+	}
+	
 	SpMatrix<T> W(ivecDim);
 	W.SetZero();
 	for (size_t i = 0; i < N; i++) {
@@ -136,7 +144,7 @@ SpMatrix<T> computeWithinCovariance(const std::vector< Vector<T> >& vectorOfFeat
 			Vector<T> x(ivecDim);
 			x.CopyFromVec(vectorOfFeatures[i]);
 			x.AddVec(-1.,spkr_means[vectorOfLabels[i]]);
-			W.AddVec2(1./N,x);
+			W.AddVec2(1./NUsedSamples,x);
 		}
 	}
 	return W;
@@ -188,7 +196,7 @@ int32 SecondsToFrameIndex(T timeStamp) {
  
 
 std::string makeSegKey(const std::vector<int32>& segmentStartEnd, 
-							  const std::string uttid);
+						const std::string uttid);
 
 
 std::vector<std::string>& split(const std::string& s, 
@@ -201,7 +209,8 @@ std::vector<std::string> split(const std::string& s, char delim);
 
 std::vector<std::string> returnNonEmptyFields(const std::vector<std::string>& fields);
 
-// compute distant matrix from i-vector collections, return distant matrix, and list of corresponding keys of ivectors
+// compute distant matrix from i-vector collections, return distant matrix, 
+// and list of corresponding keys of ivectors
 void computeDistanceMatrix(const std::vector< Vector<double> >& vectorList, 
 							Matrix<BaseFloat>& distanceMatrix,
 							const std::vector< Vector<double> >& backgroundIvectors,
@@ -209,13 +218,15 @@ void computeDistanceMatrix(const std::vector< Vector<double> >& vectorList,
 
 
 // compute the Mahalanobis distance between two i-vectors
-BaseFloat mahalanobisDistance(const Vector<double>& v1, const Vector<double>& v2, const SpMatrix<double>& totalCov);
+BaseFloat mahalanobisDistance(const Vector<double>& v1, const Vector<double>& v2, 
+								const SpMatrix<double>& totalCov);
 
 // compute the cosine distance between two i-vectors
 BaseFloat cosineDistance(const Vector<double>& v1, const Vector<double>& v2);
 
 // Mahalanobis Distance using a averaged within-class covariance (assumes homoscedasticity)
-BaseFloat conditionalBayesDistance(const Vector<double>& v1, const Vector<double>& v2, const SpMatrix<double>& withinCov);
+BaseFloat conditionalBayesDistance(const Vector<double>& v1, const Vector<double>& v2, 
+									const SpMatrix<double>& withinCov);
 
 }
 #endif

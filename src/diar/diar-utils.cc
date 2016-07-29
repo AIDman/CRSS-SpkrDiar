@@ -417,7 +417,8 @@ void computeDistanceMatrix(const std::vector< Vector<double> >& vectorList,
 }
 
 
-BaseFloat mahalanobisDistance(const Vector<double>& v1, const Vector<double>& v2, const SpMatrix<double>& totalCov) {
+BaseFloat mahalanobisDistance(const Vector<double>& v1, const Vector<double>& v2, 
+							const SpMatrix<double>& totalCov) {
 
 	Vector<double> iv1(v1.Dim());
 	iv1.CopyFromVec(v1);
@@ -443,7 +444,8 @@ BaseFloat cosineDistance(const Vector<double>& v1, const Vector<double>& v2) {
 	 return dotProduct / (sqrt(norm1)*sqrt(norm2));  
 }
 
-BaseFloat conditionalBayesDistance(const Vector<double>& v1, const Vector<double>& v2, const SpMatrix<double>& withinCov) {
+BaseFloat conditionalBayesDistance(const Vector<double>& v1, const Vector<double>& v2, 
+									const SpMatrix<double>& withinCov) {
 	// Distance matrix suggested by Rouvier and Meignier (Odyssey 12). 
 	// This measure is computes a mahalanobis distance while assuming 
 	// a similar within-class covariance for all speakers in development data. 
