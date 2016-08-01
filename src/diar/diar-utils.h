@@ -182,7 +182,7 @@ void computeMean(const std::vector< Vector<T> >& vectorOfFeatures,
 	mean.SetZero();
 	for (size_t i = 0; i < N; i++) {
 		mean.AddVec(1./N, vectorOfFeatures[i]);
-	}		
+	}
 }
 
 
@@ -216,10 +216,9 @@ void computeDistanceMatrix(const std::vector< Vector<double> >& vectorList,
 							const std::vector< Vector<double> >& backgroundIvectors,
 							const std::vector< std::string >& backgroundIvectorLabels);
 
-
 // compute the Mahalanobis distance between two i-vectors
 BaseFloat mahalanobisDistance(const Vector<double>& v1, const Vector<double>& v2, 
-								const SpMatrix<double>& totalCov);
+								const SpMatrix<double>& cov);
 
 // compute the cosine distance between two i-vectors
 BaseFloat cosineDistance(const Vector<double>& v1, const Vector<double>& v2);

@@ -59,7 +59,6 @@ int main(int argc, char *argv[]) {
     SpMatrix<double> withinCovariance = computeWithinCovariance(backgroundIvectors,
                                                                 backgroundLabels);
 
-    
     BaseFloat TrueScore=0.0;
     int32 TureCount=0;
     BaseFloat FalseScore=0.0;
@@ -83,6 +82,7 @@ int main(int argc, char *argv[]) {
         computeMean(ivectorCollect, totalMean);
         SpMatrix<double> totalCov = computeCovariance(ivectorCollect, 
                                                         totalMean);
+
         for (size_t i=0; i<loopMax;i++){
             for (size_t j=0; j<loopMax;j++){
                 std::string jLabel = speechSegments.SegKey(j);
@@ -91,11 +91,11 @@ int main(int argc, char *argv[]) {
                     iLabel != "overlap" && jLabel != "nonspeech" && jLabel != "overlap") {
                     const Vector<double> &iIvector = speechSegments.GetIvector(i);
                     const Vector<double> &jIvector = speechSegments.GetIvector(j);
-                    BaseFloat dotProduct = 0;//VecVec(iIvector, jIvector);
+                    BaseFloat dotProduct = VecVec(iIvector, jIvector);
                     //TrueScore += dotProduct; TureCount++;
-                    //BaseFloat distance = mahalanobisDistance(iIvector, jIvector, totalCov);
-                    BaseFloat distance = conditionalBayesDistance(iIvector, jIvector, 
-                                                                    withinCovariance);
+                    BaseFloat distance = mahalanobisDistance(iIvector, jIvector, totalCov);
+                    // BaseFloat distance = conditionalBayesDistance(iIvector, jIvector, 
+                    //                                               withinCovariance);
                     KALDI_LOG << "TRUE Mahalanobis scores: " << distance;
                     KALDI_LOG << "TRUE Cosine scores: " << dotProduct;
                 }
@@ -103,11 +103,11 @@ int main(int argc, char *argv[]) {
                     iLabel != "overlap" && jLabel != "nonspeech" && jLabel != "overlap") {
                     const Vector<double> &iIvector = speechSegments.GetIvector(i);
                     const Vector<double> &jIvector = speechSegments.GetIvector(j);
-                    BaseFloat dotProduct = 0;//VecVec(iIvector, jIvector);
+                    BaseFloat dotProduct = VecVec(iIvector, jIvector);
                     //FalseScore += dotProduct; FalseCount++;
-                    //BaseFloat distance = mahalanobisDistance(iIvector, jIvector, totalCov);
-                    BaseFloat distance = conditionalBayesDistance(iIvector, jIvector, 
-                                                                    withinCovariance);
+                    BaseFloat distance = mahalanobisDistance(iIvector, jIvector, totalCov);
+                    // BaseFloat distance = conditionalBayesDistance(iIvector, jIvector, 
+                    //                                                withinCovariance);
                     KALDI_LOG << "FALSE Mahalanobis scores: " << distance;
                     KALDI_LOG << "FALSE Cosine scores: " << dotProduct;
                 }

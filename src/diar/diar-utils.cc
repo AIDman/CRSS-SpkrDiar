@@ -179,7 +179,7 @@ void Segments::ExtractIvectors(const Matrix<BaseFloat>& feats,
 		Posterior::const_iterator endIter = posterior.begin() + segmentStartEnd[1]+1;
 		Posterior segPosterior(startIter, endIter);
 		
-		KALDI_LOG << " Segment Range : segmentStartEnd[0]" << " <-> " << segmentStartEnd[1] << " The seg size is: " << segPosterior.size();
+		//KALDI_LOG << " Segment Range : segmentStartEnd[0]" << " <-> " << segmentStartEnd[1] << " The seg size is: " << segPosterior.size();
 		GetSegmentIvector(segFeats, segPosterior, extractor, segmentStartEnd);
 	}
 }
@@ -359,11 +359,11 @@ std::vector<std::string>& split(const std::string& s,
 								std::vector<std::string>& elems) {
 	// Split string by delimiter e.g., ' ', ','. 
 	// PASS output vector by reference.
-    std::stringstream ss(s);
-    std::string item;
-    while (std::getline(ss, item, delim)) {
-        elems.push_back(item);
-    }
+	std::stringstream ss(s);
+	std::string item;
+	while (std::getline(ss, item, delim)) {
+		elems.push_back(item);
+	}
     return elems;
 }
 
@@ -379,13 +379,13 @@ std::vector<std::string> split(const std::string& s, char delim) {
 
 std::vector<std::string> returnNonEmptyFields(const std::vector<std::string>& fields) {
 	// Return non empty elements of vector of strings.
-    std::vector<std::string> nonEmptyFields; 
-    for(size_t i = 0; i < fields.size(); i++){
-        if(fields[i] != ""){
-            nonEmptyFields.push_back(fields[i]);
-        }
-    }
-    return nonEmptyFields;
+	std::vector<std::string> nonEmptyFields; 
+	for(size_t i = 0; i < fields.size(); i++){
+		if(fields[i] != ""){
+			nonEmptyFields.push_back(fields[i]);
+		}
+	}
+	return nonEmptyFields;
 }
 
 
@@ -397,20 +397,22 @@ void computeDistanceMatrix(const std::vector< Vector<double> >& vectorList,
 	// Calculate total mean and covariance:
 	Vector<double> vectorMean;
 	computeMean(vectorList, vectorMean);
-	//SpMatrix<double> vectorCovariance = computeCovariance(vectorList, vectorMean);
+	SpMatrix<double> vectorCovariance = computeCovariance(vectorList, vectorMean);
 	SpMatrix<double> withinCovariance = computeWithinCovariance(backgroundIvectors,
 																backgroundIvectorLabels);
 	for (size_t i=0; i<vectorList.size();i++){
 		for (size_t j=0;j<vectorList.size();j++){
 			if (i == j){
 				distanceMatrix(i,j) = 0;
+				//distanceMatrix(i,j) = cosineDistance(vectorList[i],vectorList[j]);
 			}else{
-				//distanceMatrix(i,j) = mahalanobisDistance(vectorList[i], 
-				//											vectorList[j], 
-				//											vectorCovariance);
+				// distanceMatrix(i,j) = mahalanobisDistance(vectorList[i], 
+				// 										  vectorList[j], 
+				// 										  vectorCovariance);
 				distanceMatrix(i,j) = conditionalBayesDistance(vectorList[i], 
 														 	   vectorList[j], 
 															   withinCovariance);
+				//distanceMatrix(i,j) = cosineDistance(vectorList[i],vectorList[j]);
 			}
 		}
 	}
@@ -418,21 +420,22 @@ void computeDistanceMatrix(const std::vector< Vector<double> >& vectorList,
 
 
 BaseFloat mahalanobisDistance(const Vector<double>& v1, const Vector<double>& v2, 
-							const SpMatrix<double>& totalCov) {
+							  const SpMatrix<double>& cov) {
 
 	Vector<double> iv1(v1.Dim());
 	iv1.CopyFromVec(v1);
 	Vector<double> iv2(v2.Dim());
 	iv2.CopyFromVec(v2);
 	SpMatrix<double> Sigma(v2.Dim());
-	Sigma.CopyFromSp(totalCov);
+	Sigma.CopyFromSp(cov);
 	Sigma.Invert();
 	iv1.AddVec(-1.,iv2);
 
 	// Now, calculate the quadratic term: (iv1 - iv2)^T Sigma (iv1-iv2)
 	Vector<double> S_iv1(iv1.Dim());
+	S_iv1.SetZero();
 	S_iv1.AddSpVec(1.0, Sigma, iv1, 0.0);
-	return sqrt(VecVec(iv1, iv1));
+	return sqrt(VecVec(S_iv1, S_iv1));
 }
 
 
@@ -443,6 +446,7 @@ BaseFloat cosineDistance(const Vector<double>& v1, const Vector<double>& v2) {
 
 	 return dotProduct / (sqrt(norm1)*sqrt(norm2));  
 }
+
 
 BaseFloat conditionalBayesDistance(const Vector<double>& v1, const Vector<double>& v2, 
 									const SpMatrix<double>& withinCov) {
