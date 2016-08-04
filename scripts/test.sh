@@ -114,7 +114,7 @@ run_glpkIlpTemplate(){
     log_start "Generate GLPK Template of ILP problem "
 
     x=$1
-    diar/generate_ILP_template.sh --nj 1 --seg_min 50 --delta 12 \
+    diar/generate_ILP_template.sh --nj 1 --seg_min 50 --delta 1.0 \
       exp/extractor_1024 data/$x exp/change_detect/$x/segments exp/glpk_template/$x
 
     log_end "Generate GLPK Template of ILP problem "
@@ -151,7 +151,7 @@ run_diarization(){
         make_ref ${datadir}_file_${fileidx}
         long=$(too_long ${datadir}_file_${fileidx})
         if [ $long -eq 0 ]; then
-            #run_changedetection ${datadir}_file_${fileidx}
+            run_changedetection ${datadir}_file_${fileidx}
             #test_ivectors ${datadir}_file_${fileidx}
             run_glpk_Ilp ${datadir}_file_${fileidx}
             run_glpkIlpTemplate ${datadir}_file_${fileidx}

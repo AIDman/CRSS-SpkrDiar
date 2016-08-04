@@ -91,7 +91,7 @@ int main(int argc, char *argv[]) {
                     iLabel != "overlap" && jLabel != "nonspeech" && jLabel != "overlap") {
                     const Vector<double> &iIvector = speechSegments.GetIvector(i);
                     const Vector<double> &jIvector = speechSegments.GetIvector(j);
-                    BaseFloat dotProduct = VecVec(iIvector, jIvector);
+                    BaseFloat dotProduct = 1 - cosineDistance(iIvector, jIvector);
                     //TrueScore += dotProduct; TureCount++;
                     BaseFloat distance = mahalanobisDistance(iIvector, jIvector, totalCov);
                     // BaseFloat distance = conditionalBayesDistance(iIvector, jIvector, 
@@ -103,7 +103,7 @@ int main(int argc, char *argv[]) {
                     iLabel != "overlap" && jLabel != "nonspeech" && jLabel != "overlap") {
                     const Vector<double> &iIvector = speechSegments.GetIvector(i);
                     const Vector<double> &jIvector = speechSegments.GetIvector(j);
-                    BaseFloat dotProduct = VecVec(iIvector, jIvector);
+                    BaseFloat dotProduct =  1 - cosineDistance(iIvector, jIvector);
                     //FalseScore += dotProduct; FalseCount++;
                     BaseFloat distance = mahalanobisDistance(iIvector, jIvector, totalCov);
                     // BaseFloat distance = conditionalBayesDistance(iIvector, jIvector, 
