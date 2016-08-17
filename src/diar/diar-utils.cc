@@ -400,6 +400,12 @@ void computeDistanceMatrix(const std::vector< Vector<double> >& vectorList,
 	SpMatrix<double> vectorCovariance = computeCovariance(vectorList, vectorMean);
 	SpMatrix<double> withinCovariance = computeWithinCovariance(backgroundIvectors,
 																backgroundIvectorLabels);
+
+	// Compute PLDA model from background i-vectors:
+	Plda plda;
+	estimatePLDA(backgroundIvectors, backgroundIvectorLabels, plda);
+
+
 	for (size_t i=0; i<vectorList.size();i++){
 		for (size_t j=0;j<vectorList.size();j++){
 			if (i == j){
@@ -411,7 +417,8 @@ void computeDistanceMatrix(const std::vector< Vector<double> >& vectorList,
 				// distanceMatrix(i,j) = conditionalBayesDistance(vectorList[i], 
 				// 										 	   vectorList[j], 
 				// 											   withinCovariance);
-				distanceMatrix(i,j) = 1 - cosineDistance(vectorList[i],vectorList[j]);
+				// distanceMatrix(i,j) = 1 - cosineDistance(vectorList[i],vectorList[j]);
+				distanceMatrix(i,j) = pldaScoring(vectorList[i],vectorList[j],plda);
 			}
 		}
 	}
@@ -455,6 +462,66 @@ BaseFloat conditionalBayesDistance(const Vector<double>& v1, const Vector<double
 	// Different from regular mahalanobis distance in the covariance. 
 	return mahalanobisDistance(v1, v2, withinCov);
 }
+
+BaseFloat pldaScoring(const Vector<double>& v1, const Vector<double>& v2, 
+					  Plda& plda) {
+	PldaConfig plda_scoring_config;
+	plda_scoring_config.normalize_length = true;
+	Vector<double> *v1_transformed = new Vector<double>(v1.Dim());
+	plda.TransformIvector(plda_scoring_config, v1, v1_transformed);
+	Vector<double> *v2_transformed = new Vector<double>(v2.Dim());
+	plda.TransformIvector(plda_scoring_config, v2, v2_transformed);
+
+	int32 numberOfv1utt = 1;// this is for when v1 represents train examples
+	// numberOfv1utt doesn't apply here for our usage of plda scoring.
+	return plda.LogLikelihoodRatio(*v1_transformed, numberOfv1utt, *v2_transformed);
+}
+
+
+void estimatePLDA(std::vector< Vector<double> > backgroundIvectors,
+				  std::vector<std::string> backgroundIvectorLabels,
+				  Plda& plda) {
+	std::map<std::string, std::vector<int32> > spk2utt_map;
+	for (size_t i = 0; i < backgroundIvectorLabels.size(); i++) {
+		std::string spk = backgroundIvectorLabels[i];
+		spk2utt_map[spk].push_back(i);
+	}
+
+	PldaEstimationConfig plda_config;
+	PldaStats plda_stats;
+	std::map<std::string, std::vector<int32> >::iterator iter;
+	for (iter = spk2utt_map.begin(); iter!=spk2utt_map.end(); iter++) {
+		std::vector< Vector<double> > ivectors;
+		std::string spk = iter->first;
+		std::vector<int32> uttlist = iter->second;
+		int32 nUtts = 0;
+		for (size_t i = 0; i < uttlist.size(); i++) {
+			ivectors.push_back(backgroundIvectors[uttlist[i]]);
+			nUtts++;
+		}
+
+		if (nUtts==0) {
+			KALDI_ERR << "No ivectors for speaker " << spk;
+		}else {
+			Matrix<double> ivector_mat(nUtts, ivectors[0].Dim());
+			for (size_t i = 0; i < ivectors.size(); i++) {
+				ivector_mat.Row(i).CopyFromVec(ivectors[i]);
+			}
+			double weight = 1.0;
+			plda_stats.AddSamples(weight, ivector_mat);
+		}
+	}
+	plda_stats.Sort();
+    PldaEstimator plda_estimator(plda_stats);
+    plda_estimator.Estimate(plda_config, &plda);
+}
+ 
+BaseFloat sigmoidRectifier(BaseFloat logLikelihoodRatio) {
+	// Warps log-likelihood ratio (x) such that large values of x represent shorter 
+	// distances and vice-versa. 
+	return Exp(-logLikelihoodRatio)/(1. + Exp(-logLikelihoodRatio));
+}
+
 
 }
 

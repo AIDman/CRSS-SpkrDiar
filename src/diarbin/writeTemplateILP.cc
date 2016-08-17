@@ -86,7 +86,7 @@ int main(int argc, char *argv[]) {
          backgroundIvectors.push_back(utt_ivector); 
          backgroundLabels.push_back(utt2spk_map[utt_label]); 
     }
-
+ 
     // generate distant matrix from i-vectors
     Matrix<BaseFloat> distMatrix;
     computeDistanceMatrix(ivectorCollect, distMatrix, backgroundIvectors, backgroundLabels);

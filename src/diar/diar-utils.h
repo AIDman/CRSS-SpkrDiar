@@ -12,6 +12,7 @@
 #include "hmm/posterior.h"
 #include "gmm/am-diag-gmm.h"
 #include "ivector/ivector-extractor.h"
+#include "ivector/plda.h"
 
 
 namespace kaldi{
@@ -226,6 +227,15 @@ BaseFloat cosineDistance(const Vector<double>& v1, const Vector<double>& v2);
 // Mahalanobis Distance using a averaged within-class covariance (assumes homoscedasticity)
 BaseFloat conditionalBayesDistance(const Vector<double>& v1, const Vector<double>& v2, 
 									const SpMatrix<double>& withinCov);
+
+// returns the log-likelihood ratio of v1 and v2 given PLDA model. 
+BaseFloat pldaScoring(const Vector<double>& v1, const Vector<double>& v2, Plda& plda);
+
+void estimatePLDA(std::vector< Vector<double> > backgroundIvectors, 
+				  std::vector<std::string> backgroundIvectorLabels,
+				  Plda& plda);
+
+BaseFloat sigmoidRectifier(BaseFloat logLikelihoodRatio);
 
 }
 #endif

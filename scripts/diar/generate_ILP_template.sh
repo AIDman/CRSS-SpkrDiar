@@ -58,7 +58,7 @@ if [ $stage -le 0 ]; then
      gmm-gselect --n=$num_gselect "$dubm" "$feats" ark:- \| \
      fgmm-global-gselect-to-post --min-post=$min_post $srcdir/final.ubm "$feats" \
 	ark,s,cs:- ark:- \| scale-post ark:- $posterior_scale ark,t:$dir/post/posterior.JOB || exit 1;
-
+  echo "delta is: $delta"
   $cmd JOB=1:$nj $dir/log/generate_ILP.JOB.log \
      writeTemplateILP --delta=$delta --seg_min=$seg_min $segment_dir/segments.scp \
      "$feats" ark,s,cs:$dir/post/posterior.JOB $srcdir/final.ie scp:exp/dev.iv/ivector.scp \

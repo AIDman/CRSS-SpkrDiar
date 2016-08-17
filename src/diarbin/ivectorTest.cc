@@ -59,6 +59,9 @@ int main(int argc, char *argv[]) {
     SpMatrix<double> withinCovariance = computeWithinCovariance(backgroundIvectors,
                                                                 backgroundLabels);
 
+    Plda plda;
+    estimatePLDA(backgroundIvectors, backgroundLabels, plda);
+
     BaseFloat TrueScore=0.0;
     int32 TureCount=0;
     BaseFloat FalseScore=0.0;
@@ -93,9 +96,11 @@ int main(int argc, char *argv[]) {
                     const Vector<double> &jIvector = speechSegments.GetIvector(j);
                     BaseFloat dotProduct = 1 - cosineDistance(iIvector, jIvector);
                     //TrueScore += dotProduct; TureCount++;
-                    BaseFloat distance = mahalanobisDistance(iIvector, jIvector, totalCov);
+                    //BaseFloat distance = mahalanobisDistance(iIvector, jIvector, totalCov);
                     // BaseFloat distance = conditionalBayesDistance(iIvector, jIvector, 
                     //                                               withinCovariance);
+                    BaseFloat x = pldaScoring(iIvector,jIvector,plda);
+                    BaseFloat distance = sigmoidRectifier(x);
                     KALDI_LOG << "TRUE Mahalanobis scores: " << distance;
                     KALDI_LOG << "TRUE Cosine scores: " << dotProduct;
                 }
@@ -105,9 +110,11 @@ int main(int argc, char *argv[]) {
                     const Vector<double> &jIvector = speechSegments.GetIvector(j);
                     BaseFloat dotProduct =  1 - cosineDistance(iIvector, jIvector);
                     //FalseScore += dotProduct; FalseCount++;
-                    BaseFloat distance = mahalanobisDistance(iIvector, jIvector, totalCov);
+                    ///BaseFloat distance = mahalanobisDistance(iIvector, jIvector, totalCov);
                     // BaseFloat distance = conditionalBayesDistance(iIvector, jIvector, 
                     //                                                withinCovariance);
+                    BaseFloat x = pldaScoring(iIvector,jIvector,plda);
+                    BaseFloat distance = sigmoidRectifier(x);
                     KALDI_LOG << "FALSE Mahalanobis scores: " << distance;
                     KALDI_LOG << "FALSE Cosine scores: " << dotProduct;
                 }
