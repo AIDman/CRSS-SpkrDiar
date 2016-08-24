@@ -28,7 +28,7 @@ in scripts/path.sh set KALDI_ROOT variable
 # Demo:
 To run deme script cd to scripts/
 Experiments run on the AMI meeting corpus:
-$ bash demo.sh
+$ bash test.sh
 
 
 # Content:
