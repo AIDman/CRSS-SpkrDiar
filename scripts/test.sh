@@ -32,6 +32,20 @@ run_mfcc(){
 }
 #run_mfcc $data
 
+run_combosad(){
+    log_start "Running combosad for unsupervised VAD."
+    datadir=$1
+    for x in $datadir; do
+        vaddir=exp/vad/$x
+        nvadjobs=1
+        sadsrcdir=/home/nxs113020/speech_activity_detection/kaldi_setup/
+        local/compute_combosad_decision.sh $nvadjobs "$train_cmd" data/$datadir $sadsrcdir
+    done
+    log_end "Finished generating VAD labels"
+
+}
+run_combosad $data
+
 run_vad(){
     log_start "Doing VAD"
     datadir=$1
@@ -162,7 +176,7 @@ run_diarization(){
     
     grep "OVERALL SPEAKER DIARIZATION ERROR" exp/result_DER/${datadir}_file_*/diar_err 
 }
-run_diarization $data
+#run_diarization $data
 
 
 
