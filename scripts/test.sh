@@ -44,7 +44,38 @@ run_combosad(){
     log_end "Finished generating VAD labels"
 
 }
-run_combosad $data
+#run_combosad $data
+
+run_gmmsad() {
+    num_jobs_gmm=4
+    data_dir=data/$1
+    ubmdim=512
+    
+   ## train speech model
+   #sid/train_diag_ubm.sh --nj $num_jobs_gmm --cmd "$train_cmd" $data_dir ${ubmdim} \
+   #  exp/diag_spch_gmm_${ubmdim}
+
+   ## train nonspeech model
+   #mv $data_dir/vad.scp $data_dir/vad.scp.tmp
+   #cp $data_dir/vad.n.scp $data_dir/vad.scp
+   #sid/train_diag_ubm.sh --nj $num_jobs_gmm --cmd "$train_cmd" $data_dir ${ubmdim} \
+   #  exp/diag_nspch_gmm_${ubmdim}
+   #mv $data_dir/vad.scp.tmp $data_dir/vad.scp
+   #
+    sadsrcdir=/home/nxs113020/speech_activity_detection/kaldi_setup/
+    for x in $1;do
+        add-deltas scp:data/$x/feats.scp ark,t:- | gmm-global-get-frame-likes \
+          exp/diag_spch_gmm_${ubmdim}/final.dubm ark:- ark:exp/diag_spch_gmm_${ubmdim}/spch.llk.tmp
+
+        add-deltas scp:data/$x/feats.scp ark,t:- | gmm-global-get-frame-likes \
+          exp/diag_nspch_gmm_${ubmdim}/final.dubm ark:- ark:exp/diag_nspch_gmm_${ubmdim}/nspch.llk.tmp
+
+        $sadsrcdir/src/bin/compareLogLikelihoods ark:exp/diag_spch_gmm_${ubmdim}/spch.llk.tmp \
+          ark:exp/diag_nspch_gmm_${ubmdim}/nspch.llk.tmp ark,t:exp/diag_spch_gmm_${ubmdim}/sad_scores.ark
+    done
+
+}
+run_gmmsad $data
 
 run_vad(){
     log_start "Doing VAD"
