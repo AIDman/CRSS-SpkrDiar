@@ -17,7 +17,7 @@ log_end(){
 
 set -e # exit on error
 
-data="toy_1"
+data="is_sessions"
 run_mfcc(){
     log_start "Extract MFCC features"
 
@@ -49,7 +49,7 @@ run_combosad(){
 run_gmmsad() {
     num_jobs_gmm=4
     data_dir=data/$1
-    ubmdim=512
+    ubmdim=256
     
     # train speech model
     sid/train_diag_ubm.sh --nj $num_jobs_gmm --cmd "$train_cmd" $data_dir ${ubmdim} \
