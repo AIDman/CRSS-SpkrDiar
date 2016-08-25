@@ -51,17 +51,17 @@ run_gmmsad() {
     data_dir=data/$1
     ubmdim=512
     
-   ## train speech model
-   #sid/train_diag_ubm.sh --nj $num_jobs_gmm --cmd "$train_cmd" $data_dir ${ubmdim} \
-   #  exp/diag_spch_gmm_${ubmdim}
+    # train speech model
+    sid/train_diag_ubm.sh --nj $num_jobs_gmm --cmd "$train_cmd" $data_dir ${ubmdim} \
+      exp/diag_spch_gmm_${ubmdim}
 
-   ## train nonspeech model
-   #mv $data_dir/vad.scp $data_dir/vad.scp.tmp
-   #cp $data_dir/vad.n.scp $data_dir/vad.scp
-   #sid/train_diag_ubm.sh --nj $num_jobs_gmm --cmd "$train_cmd" $data_dir ${ubmdim} \
-   #  exp/diag_nspch_gmm_${ubmdim}
-   #mv $data_dir/vad.scp.tmp $data_dir/vad.scp
-   #
+    # train nonspeech model
+    mv $data_dir/vad.scp $data_dir/vad.scp.tmp
+    cp $data_dir/vad.n.scp $data_dir/vad.scp
+    sid/train_diag_ubm.sh --nj $num_jobs_gmm --cmd "$train_cmd" $data_dir ${ubmdim} \
+      exp/diag_nspch_gmm_${ubmdim}
+    mv $data_dir/vad.scp.tmp $data_dir/vad.scp
+    
     sadsrcdir=/home/nxs113020/speech_activity_detection/kaldi_setup/
     for x in $1;do
         add-deltas scp:data/$x/feats.scp ark,t:- | gmm-global-get-frame-likes \
