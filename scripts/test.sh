@@ -46,36 +46,6 @@ run_combosad(){
 }
 #run_combosad $data
 
-run_gmmsad() {
-    num_jobs_gmm=4
-    data_dir=data/$1
-    ubmdim=256
-    
-    # train speech model
-    sid/train_diag_ubm.sh --nj $num_jobs_gmm --cmd "$train_cmd" $data_dir ${ubmdim} \
-      exp/diag_spch_gmm_${ubmdim}
-
-    # train nonspeech model
-    mv $data_dir/vad.scp $data_dir/vad.scp.tmp
-    cp $data_dir/vad.n.scp $data_dir/vad.scp
-    sid/train_diag_ubm.sh --nj $num_jobs_gmm --cmd "$train_cmd" $data_dir ${ubmdim} \
-      exp/diag_nspch_gmm_${ubmdim}
-    mv $data_dir/vad.scp.tmp $data_dir/vad.scp
-    
-    sadsrcdir=/home/nxs113020/speech_activity_detection/kaldi_setup/
-    for x in $1;do
-        add-deltas scp:data/$x/feats.scp ark,t:- | gmm-global-get-frame-likes \
-          exp/diag_spch_gmm_${ubmdim}/final.dubm ark:- ark:exp/diag_spch_gmm_${ubmdim}/spch.llk.tmp
-
-        add-deltas scp:data/$x/feats.scp ark,t:- | gmm-global-get-frame-likes \
-          exp/diag_nspch_gmm_${ubmdim}/final.dubm ark:- ark:exp/diag_nspch_gmm_${ubmdim}/nspch.llk.tmp
-
-        $sadsrcdir/src/bin/compareLogLikelihoods ark:exp/diag_spch_gmm_${ubmdim}/spch.llk.tmp \
-          ark:exp/diag_nspch_gmm_${ubmdim}/nspch.llk.tmp ark,t:exp/diag_spch_gmm_${ubmdim}/sad_scores.ark
-    done
-
-}
-run_gmmsad $data
 
 run_vad(){
     log_start "Doing VAD"
@@ -85,8 +55,49 @@ run_vad(){
      diar/compute_vad_decision.sh --nj 1 data/$x $vaddir/log $vaddir
     done
     log_end "Finish VAD"
+    python local/generate_nonspeech_labels.py data/$datadir/vad.scp
+ 
 }
-#run_vad $data
+run_vad $data
+
+
+
+run_gmmsad() {
+    num_jobs_gmm=4
+    train_data_dir=data/$1
+    test_data_dir=$1
+    ubmdim=256
+    
+    # train speech model
+    sid/train_diag_ubm.sh --nj $num_jobs_gmm --cmd "$train_cmd" $train_data_dir ${ubmdim} \
+      exp/diag_spch_gmm_${ubmdim}
+    
+    # train nonspeech model
+    mv $train_data_dir/vad.scp $train_data_dir/vad.scp.tmp
+    cp $train_data_dir/vad.n.scp $train_data_dir/vad.scp
+    sid/train_diag_ubm.sh --nj $num_jobs_gmm --cmd "$train_cmd" $train_data_dir ${ubmdim} \
+      exp/diag_nspch_gmm_${ubmdim}
+    mv $train_data_dir/vad.scp.tmp $train_data_dir/vad.scp
+    
+    sadsrcdir=/home/nxs113020/speech_activity_detection/kaldi_setup/
+    for x in $test_data_dir;do
+        add-deltas scp:data/$x/feats.scp ark,t:- | gmm-global-get-frame-likes \
+          exp/diag_spch_gmm_${ubmdim}/final.dubm ark:- ark:exp/diag_spch_gmm_${ubmdim}/spch.llk.tmp
+
+        add-deltas scp:data/$x/feats.scp ark,t:- | gmm-global-get-frame-likes \
+          exp/diag_nspch_gmm_${ubmdim}/final.dubm ark:- ark:exp/diag_nspch_gmm_${ubmdim}/nspch.llk.tmp
+
+        $sadsrcdir/src/bin/compareLogLikelihoods ark:exp/diag_spch_gmm_${ubmdim}/spch.llk.tmp \
+          ark:exp/diag_nspch_gmm_${ubmdim}/nspch.llk.tmp ark,t:exp/diag_spch_gmm_${ubmdim}/sad_scores.ark
+        
+        mkdir -p data/$x/vad_arks
+        python local/llk_to_labels.py exp/diag_spch_gmm_${ubmdim}/sad_scores.ark \
+          ark,scp:data/$x/vad_arks/vad.ark,data/$x/vad.scp
+    done
+
+}
+run_gmmsad $data
+
 
 make_ref(){
     log_start "Generate Reference Segments/Labels/RTTM files"
