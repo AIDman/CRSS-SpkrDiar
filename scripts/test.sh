@@ -94,7 +94,8 @@ run_gmmsad() {
         python local/llk_to_labels.py exp/diag_spch_gmm_${ubmdim}/sad_scores.ark \
           ark,scp:data/$x/vad_arks/vad.ark,data/$x/vad.scp
     done
-
+    
+    # 
 }
 run_gmmsad $data
 
