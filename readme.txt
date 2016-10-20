@@ -13,6 +13,11 @@ kaldi: https://sourceforge.net/projects/kaldi/
 python numpy
 
 
+[NOTE]: The system is currently still on development stage. 
+We will add detailed instructions of how to run the system once the system is ready.
+Current plan is to have BIC segmentation, bottom-up clustering, and ILP based clustering.
+The system will be benchmarked on the AMI meeting corpus.
+
 
 Instructions: 
 modify KALDI_ROOT in all Makefiles:
