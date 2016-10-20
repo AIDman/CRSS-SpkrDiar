@@ -11,6 +11,8 @@
 
 cmd=run.pl
 
+sanity_check=false # compute DER while give all segments a single label
+
 echo "$0 $@"  # Print the command line for logging
 
 if [ -f path.sh ]; then . ./path.sh; fi
@@ -41,6 +43,9 @@ for x in `cat $match_dir/rttms.scp`; do
     cat $match_dir/$utt >> $result_dir/match.rttm
     cat $ref_dir/$utt >> $result_dir/ref.rttm
 done
+    
+$sanity_check && cat $result_dir/match.rttm | awk '{$8=1;print $0}' > $result_dir/fake.rttm	
 
 perl local/md-eval-v21.pl -r $result_dir/ref.rttm -s $result_dir/match.rttm 2>&1 | tee $result_dir/diar_err   	
+$sanity_check && perl local/md-eval-v21.pl -r $result_dir/ref.rttm -s $result_dir/fake.rttm 2>&1 | tee $result_dir/diar_err.fake  	
  

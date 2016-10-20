@@ -75,7 +75,7 @@ run_gmmsad() {
     done
 
 }
-run_gmmsad $data
+#run_gmmsad $data
 
 run_vad(){
     log_start "Doing VAD"
@@ -91,8 +91,8 @@ run_vad(){
 make_ref(){
     log_start "Generate Reference Segments/Labels/RTTM files"
 
-    #ami_annotated_segment=/home/chengzhu/work/SpeechCorpus/ami_dir/segments
-    ami_annotated_segment=/home/nxs113020/Downloads/ami_dir/segments
+    ami_annotated_segment=/home/chengzhu/work/SpeechCorpus/ami_dir/segments
+    #ami_annotated_segment=/home/nxs113020/Downloads/ami_dir/segments
 
     x=$1
     local/make_ami_ref.sh data/$x $ami_annotated_segment exp/ref/$x
@@ -179,7 +179,7 @@ run_glpk_Ilp(){
 run_DER(){
     log_start "Compute Diarization Error Rate (DER)"
     x=$1    
-    diar/compute_DER.sh exp/ref/$x/rttms exp/glpk_ilp/$x/rttms exp/result_DER/$x
+    diar/compute_DER.sh --sanity_check true exp/ref/$x/rttms exp/glpk_ilp/$x/rttms exp/result_DER/$x
 
     log_end "Compute Diarization Error Rate (DER)"
 }
@@ -197,17 +197,19 @@ run_diarization(){
         long=0 #$(too_long ${datadir}_file_${fileidx})
         if [ $long -eq 0 ]; then
             #run_changedetection ${datadir}_file_${fileidx}
-            #test_ivectors ${datadir}_file_${fileidx}
-            run_glpkIlpTemplate ${datadir}_file_${fileidx}
-            run_glpk_Ilp ${datadir}_file_${fileidx}
-            run_DER ${datadir}_file_${fileidx}
+            test_ivectors ${datadir}_file_${fileidx}
+            #run_glpkIlpTemplate ${datadir}_file_${fileidx}
+            #run_glpk_Ilp ${datadir}_file_${fileidx}
+            #run_DER ${datadir}_file_${fileidx}
         fi
         fileidx=$[$fileidx+1]
     done
     
-    grep "OVERALL SPEAKER DIARIZATION ERROR" exp/result_DER/${datadir}_file_*/diar_err 
+    #grep "OVERALL SPEAKER DIARIZATION ERROR" exp/result_DER/${datadir}_file_*/diar_err
+    #grep "OVERALL SPEAKER DIARIZATION ERROR" exp/result_DER/${datadir}_file_*/diar_err* | awk '{print $1 " " $7}' | sed 'N;s/\n/ /' | tee result
+    #awk '{print $1 " " $2 " " $4}' result 	 
 }
-#run_diarization $data
+run_diarization $data
 
 
 
