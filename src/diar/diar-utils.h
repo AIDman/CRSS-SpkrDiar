@@ -16,8 +16,8 @@
 
 
 namespace kaldi{
-typedef std::pair<std::string, std::vector<int32> > segUnit;
-typedef std::vector< segUnit > segType;
+//typedef std::pair<std::string, std::vector<int32> > Seg; // segment unit(segUnit) ==> (segment_cluster_label, <segment_start_frame, segment_end_frame>)
+//typedef std::vector< Seg > SegList; // vector of segment units (segUnit)
 
 #ifndef FRAMESHIFT
 #define FRAMESHIFT 0.01
@@ -26,41 +26,60 @@ typedef std::vector< segUnit > segType;
 #define FRAMELENGTH 0.025
 #endif
 
-class Segments {
+class Segment {
 public:
-	Segments(const Vector<BaseFloat>& labels, const std::string uttid);
-	Segments();
-	Segments(const std::string uttid);
-	std::string SegKey(int32 index); // return speaker label
-	std::vector<int32> SegStartEnd(int32 index) const;
-	segUnit GetSeg(int32 index) const;
-	int32 Size() const;
-	segUnit End();
-	segUnit Begin();
+	Segment();
+	Segment(const int32 start, const int32 end);
+	Segment(const std::string label, const int32 start, const int32 end);
+	std::string Label(); // return cluster label
+	int32 StartIdx();  // return start frame index of segment
+	int32 EndIdx();	// return last frame index of segment
+	void SetLabel(std::string label);
+	Vector<double> Ivector(int32 index); // return ith i-vector
+};
+
+private:
+	std::string label_;
+	int32 start_;
+	int32 end_;
+	Vector<double> ivector_;
+};
+`
+// Segments are collection of segment, and the operations on those segments.
+class SegmentCollections {
+public:
+	SegmenCollections();
+	SegmentCollections(const std::string uttid);
+	//SegmentCollections(const Vector<BaseFloat>& FrameLabels, const std::string uttid);
+
+	int32 GetSize() const;
+	/*
+	Segment GetLastSegment();
+	Segment GetFirstSegment();
+	*/
 	std::string GetUttID();
-	Vector<double> GetIvector(int32 index); // return ith i-vector
-	void NormalizeIvectors();
-	void ToLabels(Vector<BaseFloat>&);
+	//void ToLabels(Vector<BaseFloat>&);
 	void ToRTTM(const std::string& uttid, const std::string& rttmName);
-	Segments GetSpeechSegments();
-	Segments GetLargeSegments(int32 segMin);
+	SegmentCollections GetSpeechSegments();
+	SegmentCollections GetLargeSegments(int32 min_seg_len);
 	void ExtractIvectors(const Matrix<BaseFloat>& feats,
 						 const Posterior& posterior,
 						 const IvectorExtractor& extractor);
 	void GetSegmentIvector(const Matrix<BaseFloat>& segFeats, 
 						   const Posterior& segPosterior, 
-						   const IvectorExtractor& extractor, 
-						   const std::vector<int32>& segmentStartEnd);
-	void Append(segUnit& segment);
-	void SetLabel(int32 index, std::string label);
+						   const IvectorExtractor& extractor.
+						   Segment& seg);
+
+	void NormalizeIvectors();
+	void Append(Segment& seg);
 	void Read(const std::string& segments_rxfilename);
-	void ReadIvectors(const std::string& ivector_rxfilename); 
 	void Write(const std::string& segments_dirname);
+	void ReadIvectors(const std::string& ivector_rxfilename); 
 	void WriteIvectors(const std::string& ivector_wxfilename); 
 private:
-	segType _segmentList;
-	std::string _uttid;
-	std::vector< Vector<double> > _ivectorList; 
+	std::vector<Segment> segment_list_;
+	std::string uttid_;
+	std::vector< Vector<double> > ivector_list_; 
 }; 
 
 
