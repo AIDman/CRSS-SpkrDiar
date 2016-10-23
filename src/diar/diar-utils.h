@@ -34,7 +34,7 @@ public:
 	std::string Label(); // return cluster label
 	int32 StartIdx();  // return start frame index of segment
 	int32 EndIdx();	// return last frame index of segment
-	Vector<double> Ivector(int32 index); // return ith i-vector
+	Vector<double> Ivector(); // return ith i-vector
 	void SetLabel(std::string label);
 	void SetIvector(Vector<double>);	
 

@@ -49,21 +49,21 @@ int main(int argc, char *argv[]) {
     Input ki(segments_scpfile);  // no binary argment: never binary.
     std::string line;
     while (std::getline(ki.Stream(), line)) {
-        Segments uttSegments;
+        SegmentCollection uttSegments;
         uttSegments.Read(line);
-        Segments speechSegments = uttSegments.GetSpeechSegments();
+        SegmentCollection speechSegments = uttSegments.GetSpeechSegments();
         if ( seg_min > 0 ) {
-            Segments largeSpeechSegments = speechSegments.GetLargeSegments(seg_min);
-            largeSpeechSegments.ExtractIvectors(feature_reader.Value(largeSpeechSegments.GetUttID()), posterior_reader.Value(largeSpeechSegments.GetUttID()), extractor);
+            SegmentCollection largeSpeechSegments = speechSegments.GetLargeSegments(seg_min);
+            largeSpeechSegments.ExtractIvectors(feature_reader.Value(largeSpeechSegments.UttID()), posterior_reader.Value(largeSpeechSegments.UttID()), extractor);
             largeSpeechSegments.NormalizeIvectors();
             for (size_t i = 0; i<largeSpeechSegments.Size(); i++) {
-                ivectorCollect.push_back(largeSpeechSegments.GetIvector(i));
+                ivectorCollect.push_back(largeSpeechSegments.segment_list_[i].Ivector());
             }
         } else{
-            speechSegments.ExtractIvectors(feature_reader.Value(speechSegments.GetUttID()), posterior_reader.Value(speechSegments.GetUttID()), extractor);
+            speechSegments.ExtractIvectors(feature_reader.Value(speechSegments.UttID()), posterior_reader.Value(speechSegments.UttID()), extractor);
             speechSegments.NormalizeIvectors();
             for (size_t i = 0; i<speechSegments.Size(); i++) {
-                ivectorCollect.push_back(speechSegments.GetIvector(i));
+                ivectorCollect.push_back(speechSegments.segment_list_[i].Ivector());
             }
         }
     }  

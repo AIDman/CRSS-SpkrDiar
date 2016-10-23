@@ -44,7 +44,7 @@ void Segment::SetIvector(Vector<double> ivec) {
 	this->ivector_ = ivec;
 }
 
-Vector<double> Segment::Ivector(int32 index) {
+Vector<double> Segment::Ivector() {
 	return this->ivector_;
 }
 
