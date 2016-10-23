@@ -42,26 +42,26 @@ int main(int argc, char *argv[]) {
 
     int32 ind = 0;
     while (std::getline(ki.Stream(), line)) {
-        Segments uttSegments;
+        SegmentCollection uttSegments;
         uttSegments.Read(line);
 
         if ( seg_min > 0 ){
-            Segments speechSegments = uttSegments.GetSpeechSegments();
-            Segments largeSpeechSegments = speechSegments.GetLargeSegments(seg_min);
+            SegmentCollection speechSegments = uttSegments.GetSpeechSegments();
+            SegmentCollection largeSpeechSegments = speechSegments.GetLargeSegments(seg_min);
             for (size_t i = 0; i < largeSpeechSegments.Size(); i++) {
-                largeSpeechSegments.SetLabel(i, ilpClusterLabel[ind]);
+                largeSpeechSegments.segment_list_[i].SetLabel(ilpClusterLabel[ind]);
                 ind++;
             }
             std::getline(ko.Stream(), rttm_filename);
-            largeSpeechSegments.ToRTTM(largeSpeechSegments.GetUttID(), rttm_filename);
+            largeSpeechSegments.ToRTTM(largeSpeechSegments.UttID(), rttm_filename);
         } else {
-            Segments speechSegments = uttSegments.GetSpeechSegments();
+            SegmentCollection speechSegments = uttSegments.GetSpeechSegments();
             for (size_t i = 0; i < speechSegments.Size(); i++) {
-                speechSegments.SetLabel(i, ilpClusterLabel[ind]);
+                speechSegments.segment_list_[i].SetLabel(ilpClusterLabel[ind]);
                 ind++;
             }
             std::getline(ko.Stream(), rttm_filename);
-            speechSegments.ToRTTM(speechSegments.GetUttID(), rttm_filename);
+            speechSegments.ToRTTM(speechSegments.UttID(), rttm_filename);
         }
     }
 }

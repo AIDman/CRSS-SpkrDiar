@@ -15,13 +15,13 @@ Segment::Segment(){}
 Segment::Segment(const int32 start, const int32 end) {
 	this->label_ = "";
 	this->start_ = start;
-	this->end_ = endl;
+	this->end_ = end;
 }
 
 Segment::Segment(const std::string label, const int32 start, const int32 end) {
 	this->label_ = label;
 	this->start_ = start;
-	this->end_ = endl;
+	this->end_ = end;
 }
 
 std::string Segment::Label() {
@@ -37,7 +37,11 @@ int32 Segment::EndIdx() {
 } 
 
 void Segment::SetLabel(std::string label) {
-	this->lebel_ = label;
+	this->label_ = label;
+}
+
+void Segment::SetIvector(Vector<double> ivec) {
+	this->ivector_ = ivec;
 }
 
 Vector<double> Segment::Ivector(int32 index) {
@@ -45,21 +49,21 @@ Vector<double> Segment::Ivector(int32 index) {
 }
 
 
-// SegmentCollections Class Implementations
-SegmentCollections::SegmentCollections(){}
+// SegmentCollection Class Implementations
+SegmentCollection::SegmentCollection(){}
 
-SegmentCollections::SegmentCollections(const std::string uttid){
+SegmentCollection::SegmentCollection(const std::string uttid){
 	this->uttid_ = uttid;
 }
 
-/*
-SegmentCollections::SegmentCollections(const Vector<BaseFloat>& FrameLabels, const std::string uttid) {
+
+SegmentCollection::SegmentCollection(const Vector<BaseFloat>& frame_labels, const std::string uttid) {
 	// NOTE: The rules of input label is as follow
 	// -1 -> overlap
 	// 0 -> nonspeech
 	// 1,2,..,n -> speaker1, speaker2, speakern   
 	// Other conditions may be added in the future.
-	this->_uttid = uttid;
+	this->uttid_ = uttid;
 	int32 state;
 	int32 prevState;
 	std::vector<int32> segmentStartEnd;
@@ -67,58 +71,61 @@ SegmentCollections::SegmentCollections(const Vector<BaseFloat>& FrameLabels, con
 	int32 endSeg = 0;
 	segmentStartEnd.push_back(startSeg);
 	segmentStartEnd.push_back(endSeg);
-	for (size_t i=1; i<labels.Dim(); i++) {
-		state = labels(i);
-		prevState = labels(i-1);
-		if (state != prevState || i==labels.Dim()-1) {
-			if (i==labels.Dim()-1) {
+	for (size_t i=1; i<frame_labels.Dim(); i++) {
+		state = frame_labels(i);
+		prevState = frame_labels(i-1);
+		if (state != prevState || i==frame_labels.Dim()-1) {
+			if (i==frame_labels.Dim()-1) {
 				i++;
 			}
 			if (prevState == -1) {
 				segmentStartEnd[1] = i-1;
-				this->segment_list_.push_back(std::make_pair("overlap",segmentStartEnd));
+				Segment new_seg("overlap",segmentStartEnd[0],segmentStartEnd[1]);
+				this->segment_list_.push_back(new_seg);
 				segmentStartEnd[0] = i;
 			}else if (prevState == 0) {
 				segmentStartEnd[1] = i-1;
-				this->segment_list_.push_back(std::make_pair("nonspeech",segmentStartEnd));
+				Segment new_seg("nonspeech",segmentStartEnd[0],segmentStartEnd[1]);
+				this->segment_list_.push_back(new_seg);
 				segmentStartEnd[0] = i;				
 			}else if (prevState > 0) {
 				std:: string stateStr = numberToString(prevState);
 				segmentStartEnd[1] = i-1;
-				this->segment_list_.push_back(std::make_pair(stateStr,segmentStartEnd));
+				Segment new_seg(stateStr,segmentStartEnd[0],segmentStartEnd[1]);
+				this->segment_list_.push_back(new_seg);
 				segmentStartEnd[0] = i;
 			} 
 		}
 	}
 }
-*/
 
 
 /*
-Segment SegmentCollections::Begin() {
+Segment SegmentCollection::Begin() {
 	return this->segment_list_[0];
 }
 
 
-segUnit SegmentCollections::End() {
+segUnit SegmentCollection::End() {
 	return this->segment_list_.back();
 }
 */
 
 
-std::string SegmentCollections::GetUttID() {
+std::string SegmentCollection::UttID() {
 	return this->uttid_;
 }
 
 
-int32 SegmentCollections::GetSize() const {
+int32 SegmentCollection::Size() const {
 	return int32(this->segment_list_.size());
 }
 
-
-Segment SegmentCollections::GetSeg(int32 index) const {
+/*
+Segment SegmentCollection::GetSeg(int32 index) const {
 	return this->segment_list_[index];
 }
+*/
 
 
 /*
@@ -148,13 +155,13 @@ void Segments::ToLabels(Vector<BaseFloat>& labels){
 */
 
 
-void SegmentCollections::ToRTTM(const std::string& uttid, const std::string& rttmName) {
+void SegmentCollection::ToRTTM(const std::string& uttid, const std::string& rttmName) {
 	std::ofstream fout;
 	fout.open(rttmName.c_str());
 	for (size_t i =0; i < this->segment_list_.size(); i++){
 		std::string spkrID = this->segment_list_[i].Label();
-		BaseFloat segStart = FrameIndexToSeconds(this->segment_list_[i].StartIdx);
-		BaseFloat segLength = FrameIndexToSeconds(this->segment_list_[i].EndIdx) - segStart;
+		BaseFloat segStart = FrameIndexToSeconds(this->segment_list_[i].StartIdx());
+		BaseFloat segLength = FrameIndexToSeconds(this->segment_list_[i].EndIdx()) - segStart;
 		fout << "SPEAKER ";
 		fout << uttid << " ";
 		fout << 1 << " ";
@@ -169,18 +176,18 @@ void SegmentCollections::ToRTTM(const std::string& uttid, const std::string& rtt
 }
 
 
-SegmentCollections SegmentCollections::GetSpeechSegments() {
-	SegmentCollections speechSegments(this->uttid_);
+SegmentCollection SegmentCollection::GetSpeechSegments() {
+	SegmentCollection speechSegments(this->uttid_);
 	for (size_t i = 0; i < this->segment_list_.size(); i++) {
-		if (this->segment_list_[i].first != "nonspeech" && this->segment_list_[i].first != "overlap") {
+		if (this->segment_list_[i].Label() != "nonspeech" && this->segment_list_[i].Label() != "overlap") {
 			speechSegments.Append(this->segment_list_[i]);
 		}
 	}
 	return speechSegments;
 }
 
-SegmentCollections SegmentCollections::GetLargeSegments(int32 min_seg_len) {
-	SegmentCollections largeSegments(uttid_);
+SegmentCollection SegmentCollection::GetLargeSegments(int32 min_seg_len) {
+	SegmentCollection largeSegments(uttid_);
 	for (size_t i = 0; i < this->segment_list_.size(); i++) {
 		Segment curr_seg = this->segment_list_[i];
 		int32 curr_seg_size = curr_seg.EndIdx() - curr_seg.StartIdx() + 1;
@@ -192,14 +199,13 @@ SegmentCollections SegmentCollections::GetLargeSegments(int32 min_seg_len) {
 }
 
 
-void SegmentCollections::ExtractIvectors(const Matrix<BaseFloat>& feats,
+void SegmentCollection::ExtractIvectors(const Matrix<BaseFloat>& feats,
 							   const Posterior& posterior,
 							   const IvectorExtractor& extractor) {
 	int32 featsDim = extractor.FeatDim();
 	size_t numSegs = this->segment_list_.size();
 	for (size_t i=0; i < numSegs; i++){
-		std::string segmentLabel = this->segment_list_[i].first;
-		std::vector<int32> segmentStartEnd = this->segment_list_[i].second;
+		std::string segmentLabel = this->segment_list_[i].Label();
 		Matrix<BaseFloat> segFeats(this->segment_list_[i].EndIdx() - this->segment_list_[i].StartIdx() +1, featsDim);
 		segFeats.CopyFromMat(feats.Range(this->segment_list_[i].StartIdx(), this->segment_list_[i].EndIdx() - this->segment_list_[i].StartIdx() + 1, 0, featsDim));
 
@@ -213,7 +219,7 @@ void SegmentCollections::ExtractIvectors(const Matrix<BaseFloat>& feats,
 }
 
 
-void SegmentCollections::GetSegmentIvector(const Matrix<BaseFloat>& segFeats, 
+void SegmentCollection::GetSegmentIvector(const Matrix<BaseFloat>& segFeats, 
 							     const Posterior& segPosterior, 
 							     const IvectorExtractor& extractor, Segment& seg) {
 	Vector<double> ivector;
@@ -225,12 +231,12 @@ void SegmentCollections::GetSegmentIvector(const Matrix<BaseFloat>& segFeats,
     ivector.Resize(extractor.IvectorDim());
     ivector(0) = extractor.PriorOffset();
     extractor.GetIvectorDistribution(utt_stats, &ivector, NULL);
-    curr_seg.ivector_ = ivector;
+    seg.SetIvector(ivector);
     ivector_list_.push_back(ivector);
 }
 
 
-void SegmentCollections::NormalizeIvectors() {
+void SegmentCollection::NormalizeIvectors() {
 	// NOTE: Add variance normalization to this function. 
 	Vector<double> ivectorMean;
 	computeMean(this->ivector_list_, ivectorMean);
@@ -241,12 +247,12 @@ void SegmentCollections::NormalizeIvectors() {
 }
 
 
-void SegmentCollections::Append(Segment& seg) {
-	this->segment_list_.push_back(segment);
+void SegmentCollection::Append(Segment& seg) {
+	this->segment_list_.push_back(seg);
 }
 
 
-void SegmentCollections::Read(const std::string& segments_rxfilename) {
+void SegmentCollection::Read(const std::string& segments_rxfilename) {
 	// segments_rxfilename contains only segments information from single audio stream.
     Input ki(segments_rxfilename);  // no binary argment: never binary.
     std::string line;
@@ -267,10 +273,10 @@ void SegmentCollections::Read(const std::string& segments_rxfilename) {
 		start_str = split_line[2],
 		end_str = split_line[3];
 
-		if (this->_uttid.empty()) {
-			this->_uttid = recording;
+		if (this->uttid_.empty()) {
+			this->uttid_ = recording;
 		}else {
-			if (this->_uttid != recording) {
+			if (this->uttid_ != recording) {
 				KALDI_ERR << "Only one audio stream is permitted per segment file.";
 			}
 		}
@@ -300,26 +306,27 @@ void SegmentCollections::Read(const std::string& segments_rxfilename) {
 		}
 
 		std::vector<int32> segStartEnd;
-		Segment seg(spkrLabel, SecondsToFrameIndex(BaseFloat(start)),SecondsToFrameIndex(BaseFloat(end)), end);
+		Segment seg(spkrLabel, SecondsToFrameIndex(BaseFloat(start)),SecondsToFrameIndex(BaseFloat(end)));
 		this->segment_list_.push_back(seg);
 	}	
 }
 
 
-void SegmentCollections::Write(const std::string& segments_dirname) {
-	std::string segments_wxfilename = segments_dirname + "/" + this->_uttid + ".seg";
+void SegmentCollection::Write(const std::string& segments_dirname) {
+	std::string segments_wxfilename = segments_dirname + "/" + this->uttid_ + ".seg";
 	std::string segments_scpfilename = segments_dirname + "/" + "segments.scp";
 	std::ofstream fout;
 	std::ofstream fscp;
 	fout.open(segments_wxfilename.c_str());
 	fscp.open(segments_scpfilename.c_str(), std::ios::app);
 	for (size_t i =0; i < this->segment_list_.size(); i++){
-		std::string segID = makeSegKey(this->segment_list_[i].second, this->_uttid);
-		std::string spkrLabel = this->segment_list_[i].first;
-		BaseFloat segStart = FrameIndexToSeconds(this->segment_list_[i].second[0]);
-		BaseFloat segEnd = FrameIndexToSeconds(this->segment_list_[i].second[1]);
+		//std::string segID = makeSegKey(this->segment_list_[i].second, this->uttid_);
+		std::string segID = this->uttid_;
+		std::string spkrLabel = this->segment_list_[i].Label();
+		BaseFloat segStart = FrameIndexToSeconds(this->segment_list_[i].StartIdx());
+		BaseFloat segEnd = FrameIndexToSeconds(this->segment_list_[i].EndIdx());
 		fout << segID << " ";
-		fout << this->_uttid << " ";
+		fout << this->uttid_ << " ";
 		fout << std::fixed << std::setprecision(3);
 		fout << segStart << " ";
 		fout << segEnd << " ";
@@ -330,11 +337,13 @@ void SegmentCollections::Write(const std::string& segments_dirname) {
 	fout.close();
 }
 
-
-void SegmentCollections::ReadIvectors(const std::string& ivector_rxfilename) {
+/*
+void SegmentCollection::ReadIvectors(const std::string& ivector_rxfilename) {
 	SequentialDoubleVectorReader ivector_reader(ivector_rxfilename);
+	size_t i = 0;
     for (; !ivector_reader.Done(); ivector_reader.Next()) {
-        std::string ivectorKey = ivector_reader.Key();   
+        std::string ivectorKey = ivector_reader.Key();
+        if(i<this->segment_list_.size()) segment_list_[i++].SetIvector(ivector_reader.Value());   
         this->ivector_list_.push_back(ivector_reader.Value());
     }
     if (this->ivector_list_.size() != this->segment_list_.size()) {
@@ -345,13 +354,15 @@ void SegmentCollections::ReadIvectors(const std::string& ivector_rxfilename) {
 void Segments::WriteIvectors(const std::string& ivector_wxfilename){
 	DoubleVectorWriter ivectorWriter(ivector_wxfilename);
 	for (size_t i =0; i < this->segment_list_.size(); i++){
-		std::string segID = makeSegKey(this->segment_list_[i].second, this->_uttid);
+		std::string segID = makeSegKey(this->segment_list_[i].second, this->uttid_);
 		if (this->ivector_list_.empty()) {
-			KALDI_ERR << "ivector list for " << this->_uttid << " Segments do not exist!"; 
+			KALDI_ERR << "ivector list for " << this->uttid_ << " Segments do not exist!"; 
 		}
 		ivectorWriter.Write(segID, this->ivector_list_[i]);
 	}
 }
+*/
+
 
 
 BaseFloat FrameIndexToSeconds(int32 frame) {
@@ -359,7 +370,7 @@ BaseFloat FrameIndexToSeconds(int32 frame) {
 	return frame*FRAMESHIFT;
 }
 
-
+/*
 std::string makeSegKey(const std::vector<int32>& segmentStartEnd, 
 				const std::string uttid) { 
 	// Make unique key for each segment of each utterance, by concatenating uttid with segment start and end
@@ -374,6 +385,7 @@ std::string makeSegKey(const std::vector<int32>& segmentStartEnd,
 
 	return segID;       
 }
+*/
 
 
 std::vector<std::string>& split(const std::string& s, 

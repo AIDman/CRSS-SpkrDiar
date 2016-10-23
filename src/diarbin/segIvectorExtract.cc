@@ -48,8 +48,8 @@ int main(int argc, char *argv[]) {
 		Posterior posterior = posterior_reader.Value(key);   
 
 		// convert labels into segments
-		Segments allSegments(label_reader.Value(), key);
-		Segments speechSegments = allSegments.GetSpeechSegments();
+		SegmentCollection allSegments(label_reader.Value(), key);
+		SegmentCollection speechSegments = allSegments.GetSpeechSegments();
 		speechSegments.ExtractIvectors(feats, posterior, extractor);
 
 		speechSegments.Write(segments_dirname);

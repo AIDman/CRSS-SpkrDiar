@@ -34,9 +34,9 @@ public:
 	std::string Label(); // return cluster label
 	int32 StartIdx();  // return start frame index of segment
 	int32 EndIdx();	// return last frame index of segment
-	void SetLabel(std::string label);
 	Vector<double> Ivector(int32 index); // return ith i-vector
-};
+	void SetLabel(std::string label);
+	void SetIvector(Vector<double>);	
 
 private:
 	std::string label_;
@@ -44,39 +44,41 @@ private:
 	int32 end_;
 	Vector<double> ivector_;
 };
-`
-// Segments are collection of segment, and the operations on those segments.
-class SegmentCollections {
-public:
-	SegmenCollections();
-	SegmentCollections(const std::string uttid);
-	//SegmentCollections(const Vector<BaseFloat>& FrameLabels, const std::string uttid);
 
-	int32 GetSize() const;
+// Segments are collection of segment, and the operations on those segments.
+class SegmentCollection {
+public:
+	SegmentCollection();
+	SegmentCollection(const std::string uttid);
+	SegmentCollection(const Vector<BaseFloat>& frame_labels, const std::string uttid);
+
+	int32 Size() const;
 	/*
 	Segment GetLastSegment();
 	Segment GetFirstSegment();
 	*/
-	std::string GetUttID();
+	std::string UttID();
 	//void ToLabels(Vector<BaseFloat>&);
 	void ToRTTM(const std::string& uttid, const std::string& rttmName);
-	SegmentCollections GetSpeechSegments();
-	SegmentCollections GetLargeSegments(int32 min_seg_len);
+	SegmentCollection GetSpeechSegments();
+	SegmentCollection GetLargeSegments(int32 min_seg_len);
 	void ExtractIvectors(const Matrix<BaseFloat>& feats,
 						 const Posterior& posterior,
 						 const IvectorExtractor& extractor);
 	void GetSegmentIvector(const Matrix<BaseFloat>& segFeats, 
 						   const Posterior& segPosterior, 
-						   const IvectorExtractor& extractor.
+						   const IvectorExtractor& extractor,
 						   Segment& seg);
 
 	void NormalizeIvectors();
 	void Append(Segment& seg);
 	void Read(const std::string& segments_rxfilename);
 	void Write(const std::string& segments_dirname);
+	/*
 	void ReadIvectors(const std::string& ivector_rxfilename); 
 	void WriteIvectors(const std::string& ivector_wxfilename); 
-private:
+	*/
+
 	std::vector<Segment> segment_list_;
 	std::string uttid_;
 	std::vector< Vector<double> > ivector_list_; 

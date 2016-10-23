@@ -5,7 +5,6 @@
 #include "util/common-utils.h"
 #include "base/kaldi-common.h"
 #include "diar/diar-utils.h"
-#include "diar/bic.h"
 
 int main(int argc, char *argv[]) {
 	typedef kaldi::int32 int32;
@@ -28,7 +27,7 @@ int main(int argc, char *argv[]) {
     SequentialBaseFloatVectorReader label_reader(label_rspecifier);
 
     for (; !label_reader.Done(); label_reader.Next()) {
-        Segments allSegments(label_reader.Value(), label_reader.Key());
+        SegmentCollection allSegments(label_reader.Value(), label_reader.Key());
         allSegments.Write(segments_dirname);
     }
 }
