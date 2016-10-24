@@ -1,5 +1,5 @@
-#ifndef KALDI_DIAR_UTILS_H_
-#define KALDI_DIAR_UTILS_H_
+#ifndef KALDI_SRC_DIAR_DIAR_UTILS_H_
+#define KALDI_SRC_DIAR_DIAR_UTILS_H_
 
 #include <vector>
 #include <string>

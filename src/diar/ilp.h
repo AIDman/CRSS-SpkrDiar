@@ -1,5 +1,5 @@
-#ifndef KALDI_IVECTOR_DIAR_ILP_H_
-#define KALDI_IVECTOR_DIAR_ILP_H_
+#ifndef KALDI_SRC_DIAR_ILP_H_
+#define KALDI_SRC_DIAR_ILP_H_
 
 #include <vector>
 #include <string>

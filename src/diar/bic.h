@@ -1,5 +1,5 @@
-#ifndef KALDI_BIC_H_
-#define KALDI_BIC_H_
+#ifndef KALDI_SRC_DIAR_BIC_H_
+#define KALDI_SRC_DIAR_BIC_H_
 
 #include <vector>
 #include "util/common-utils.h"
