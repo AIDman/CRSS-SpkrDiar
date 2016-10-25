@@ -36,6 +36,10 @@ int32 Segment::EndIdx() {
 	return this->end_;
 } 
 
+int32 Segment::Size() {
+	return this->end_ - this->start_ + 1;
+}
+
 void Segment::SetLabel(std::string label) {
 	this->label_ = label;
 }
