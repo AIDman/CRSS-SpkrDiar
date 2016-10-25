@@ -52,6 +52,22 @@ std::string Cluster::Label() {
 	return this->label_;
 }
 
+BaseFloat Cluster::LogDet(const Matrix<BaseFloat> &feats) {
+	Matrix<BaseFloat> feats_collect;
+	int32 featdim = feats.NumCols();
+	int32 tot_frames = 0;
+	int32 insert_frame = 0;
+	for(int i=0;i<list_.size();i++) {
+		Segment seg = list_[i];
+		seg_size = seg.Size();
+		tot_frame += seg_size;
+		feats_collect.Resize(tot_frame. featdim);
+		feats_collect(insert_frame, seg_size, 0, dim).CopyFromMat(feats.Range(seg.Startidx(),seg_size,0,dim));
+		insert_frame += seg_size;
+	}
+
+	Compute
+}
 
 //==========================================================================
 class ClusterCollection {
@@ -130,6 +146,12 @@ void ClusterCollection::FindMinDistClusters(const vector<Cluster*> &min_dist_clu
 	}
 	return;
 }
+
+BaseFloat ClusterCollection::DistanceOfTwoClusters(Cluster* cluster1, Cluster* cluster2) {
+
+}
+
+
 
 static void ClusterCollection::MergeClusters(Cluster* clust1, Cluster* clust2) {
 	vector<Segment> clust2_segments = clust2.AllSegments();
