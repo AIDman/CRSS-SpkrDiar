@@ -203,6 +203,11 @@ SegmentCollection SegmentCollection::GetLargeSegments(int32 min_seg_len) {
 }
 
 
+Segment SegmentCollection::KthSegment(int32 k) {
+	return segment_list_[k];
+}
+
+
 void SegmentCollection::ExtractIvectors(const Matrix<BaseFloat>& feats,
 							   const Posterior& posterior,
 							   const IvectorExtractor& extractor) {

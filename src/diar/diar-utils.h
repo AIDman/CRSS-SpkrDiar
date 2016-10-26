@@ -61,6 +61,7 @@ public:
 	std::string UttID();
 	//void ToLabels(Vector<BaseFloat>&);
 	void ToRTTM(const std::string& uttid, const std::string& rttmName);
+	Segment KthSegment(int32 k);
 	SegmentCollection GetSpeechSegments();
 	SegmentCollection GetLargeSegments(int32 min_seg_len);
 	void ExtractIvectors(const Matrix<BaseFloat>& feats,
@@ -80,6 +81,7 @@ public:
 	void WriteIvectors(const std::string& ivector_wxfilename); 
 	*/
 
+private:
 	std::vector<Segment> segment_list_;
 	std::string uttid_;
 	std::vector< Vector<double> > ivector_list_; 
