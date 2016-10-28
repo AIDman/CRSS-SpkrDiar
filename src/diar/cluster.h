@@ -20,6 +20,8 @@ public:
 	std::vector<Segment> AllSegments();
 	std::string Label();
 	int32 NumFrames();
+	int32 NumSegments();
+	Segment KthSegment(int32 k);
 	BaseFloat LogDet(const Matrix<BaseFloat> &feats);
 	Cluster* prev;
 	Cluster* next;
@@ -33,39 +35,25 @@ private:
 	int32 frames_;
 };
 
-int Cluster::id_generator = 1;
-std::string Cluster::prefix = "C";
-
 
 class ClusterCollection {
 public:
 	ClusterCollection();
+	string UttID();
 	void InitFromNonLabeledSegments(SegmentCollection non_clustered_segmemts);
 	//InitFromLabeledSegments(SegmentCollection);
 	void BottomUpClustering(const Matrix<BaseFloat> &feats, int32 target_cluster_num);
 	void FindMinDistClusters(const Matrix<BaseFloat> &feats, std::vector<Cluster*> &min_dist_clusters);
 	static void MergeClusters(Cluster* clust1, Cluster* clust2);
 	BaseFloat DistanceOfTwoClusters(const Matrix<BaseFloat> &feats, Cluster* cluster1, Cluster* cluster2);
-	void WriteToSegments(const std::string& segment_dir);
+	void Write(const std::string& segment_dir);
 	Cluster* Head();
 
 private:
+	string uttid_;
 	int32 num_clusters_;
 	Cluster* head_cluster_;
 };
-
-
-void ClusterCollection::MergeClusters(Cluster* clust1, Cluster* clust2) {
-	std::vector<Segment> clust2_segments = clust2->AllSegments();
-	for(int i=0; i<clust2_segments.size();i++) {
-		clust1->AddSegment(clust2_segments[i]);
-	}
-
-	if(clust2->prev) clust2->prev->next = clust2->next;
-	if(clust2->next) clust2->next->prev = clust2->prev; 
-
-	delete [] clust2;
-}
 
 
 template <typename T>

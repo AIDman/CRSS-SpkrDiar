@@ -269,18 +269,17 @@ void SegmentCollection::Read(const std::string& segments_rxfilename) {
     while (std::getline(ki.Stream(), line)) {
 		std::vector<std::string> split_line;
 		// Split the line by space or tab and check the number of fields in each
-		// line. There must be 4 fields--segment name , reacording wav file name,
-		// start time, end time; 5th field (speaker ID info) is optional.
+		// line. There must be 3 fields--reacording wav file name,
+		// start time, end time; 4th field (speaker ID info) is optional.
 		SplitStringToVector(line, " \t\r", true, &split_line);
-		if (split_line.size() != 4 && split_line.size() != 5) {
+		if (split_line.size() != 3 && split_line.size() != 4) {
 			KALDI_WARN << "Invalid line in segments file: " << line;
 			continue;
 		}
 
-		std::string segment = split_line[0],
-		recording = split_line[1],
-		start_str = split_line[2],
-		end_str = split_line[3];
+		std::string recording = split_line[0],
+		start_str = split_line[1],
+		end_str = split_line[2];
 
 		if (this->uttid_.empty()) {
 			this->uttid_ = recording;
@@ -309,9 +308,9 @@ void SegmentCollection::Read(const std::string& segments_rxfilename) {
 		continue;
 		}
 		std::string spkrLabel = "unk";  // default speaker label is unknown.
-		// if each line has 5 elements then 5th element must be speaker label
-		if (split_line.size() == 5) {
-			spkrLabel = split_line[4];
+		// if each line has 4elements then 4th element must be speaker label
+		if (split_line.size() == 4) {
+			spkrLabel = split_line[3];
 		}
 
 		std::vector<int32> segStartEnd;
@@ -329,12 +328,9 @@ void SegmentCollection::Write(const std::string& segments_dirname) {
 	fout.open(segments_wxfilename.c_str());
 	fscp.open(segments_scpfilename.c_str(), std::ios::app);
 	for (size_t i =0; i < this->segment_list_.size(); i++){
-		//std::string segID = makeSegKey(this->segment_list_[i].second, this->uttid_);
-		std::string segID = this->uttid_;
 		std::string spkrLabel = this->segment_list_[i].Label();
 		BaseFloat segStart = FrameIndexToSeconds(this->segment_list_[i].StartIdx());
 		BaseFloat segEnd = FrameIndexToSeconds(this->segment_list_[i].EndIdx());
-		fout << segID << " ";
 		fout << this->uttid_ << " ";
 		fout << std::fixed << std::setprecision(3);
 		fout << segStart << " ";

@@ -49,7 +49,7 @@ int main(int argc, char *argv[]) {
             SegmentCollection speechSegments = uttSegments.GetSpeechSegments();
             SegmentCollection largeSpeechSegments = speechSegments.GetLargeSegments(seg_min);
             for (size_t i = 0; i < largeSpeechSegments.Size(); i++) {
-                largeSpeechSegments.segment_list_[i].SetLabel(ilpClusterLabel[ind]);
+                largeSpeechSegments.KthSegment(i).SetLabel(ilpClusterLabel[ind]);
                 ind++;
             }
             std::getline(ko.Stream(), rttm_filename);
@@ -57,7 +57,7 @@ int main(int argc, char *argv[]) {
         } else {
             SegmentCollection speechSegments = uttSegments.GetSpeechSegments();
             for (size_t i = 0; i < speechSegments.Size(); i++) {
-                speechSegments.segment_list_[i].SetLabel(ilpClusterLabel[ind]);
+                speechSegments.KthSegment(i).SetLabel(ilpClusterLabel[ind]);
                 ind++;
             }
             std::getline(ko.Stream(), rttm_filename);

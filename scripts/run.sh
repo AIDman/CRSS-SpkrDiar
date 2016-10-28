@@ -17,7 +17,7 @@ log_end(){
 
 set -e # exit on error
 
-data="is_sessions"
+data="is_sessions_file_31"
 run_mfcc(){
     log_start "Extract MFCC features"
 
@@ -56,6 +56,21 @@ make_ref(){
     log_end "Generate Reference Segments/Labels/RTTM files"
 }
 make_ref $data 
+
+
+bottom_up_clustering(){
+    log_start "Bottom Up Clustering"
+
+    x=$1	
+
+    mkdir -p exp/clustering/$x/segments; rm -rf exp/clustering/$x/segments
+    feats="ark,s,cs:add-deltas $delta_opts scp:data/$x/feats.scp ark:- | apply-cmvn-sliding --norm-vars=false --center=true --cmn-window=300 ark:- ark:- |"	
+    segmentClustering exp/ref/$x/segments/segments.scp "$feats" exp/clustering/$x/segments 	
+
+    log_end "Bottom Up Clustering"
+}
+bottom_up_clustering $data
+
 
 test_ivectors(){
 
