@@ -1,4 +1,5 @@
 #include <iomanip>
+#include <cfloat>
 #include "cluster.h"
 
 namespace kaldi {
@@ -19,31 +20,31 @@ void Cluster::AddSegment(Segment new_segment) {
 }
 
 
-std::vector<Segment> Cluster::AllSegments() {
+std::vector<Segment> Cluster::AllSegments() const {
 	return this->list_;
 }
 
 
-Segment Cluster::KthSegment(int32 k) {
+Segment Cluster::KthSegment(int32 k) const {
 	return this->list_[k];
 }
 
 
-std::string Cluster::Label() {
+std::string Cluster::Label() const {
 	return this->label_;
 }
 
 
-int32 Cluster::NumFrames() {
+int32 Cluster::NumFrames() const {
 	return this->frames_;
 }
 
 
-int32 Cluster::NumSegments() {
+int32 Cluster::NumSegments() const {
 	return this->list_.size();
 }
 
-BaseFloat Cluster::LogDet(const Matrix<BaseFloat> &feats) {
+BaseFloat Cluster::LogDet(const Matrix<BaseFloat> &feats) const {
 	Matrix<BaseFloat> feats_collect;
 	int32 featdim = feats.NumCols();
 	int32 tot_frames = 0;
@@ -75,23 +76,26 @@ string ClusterCollection::UttID() {
 void ClusterCollection::InitFromNonLabeledSegments(SegmentCollection non_clustered_segments) {
 	 int32 num_segments = non_clustered_segments.Size();
 	 if(num_segments < 1) KALDI_ERR << "Clusters could not be initialized from empty segments";
+	 Cluster* head_cluster = new Cluster(non_clustered_segments.KthSegment(0));
 	 Cluster* prev_cluster = NULL; 
 	 for(int32 i=0; i<num_segments;i++){
 	 	if(i==0) {
-	 		Cluster* head_cluster_ = new Cluster(non_clustered_segments.KthSegment(i));
-	 		head_cluster_->prev = NULL;
-	 		prev_cluster = head_cluster_;
+	 		head_cluster->prev = NULL;
+	 		prev_cluster = head_cluster;
 	 		continue;
 	 	} 
 
 	 	Cluster* new_cluster = new Cluster(non_clustered_segments.KthSegment(i));
 	 	prev_cluster->next = new_cluster;
 	 	new_cluster->prev = prev_cluster;
-	 	if(i==num_segments-1) new_cluster=NULL;
+	 	prev_cluster = new_cluster;
+	 	if(i==num_segments-1) new_cluster->next=NULL; // last cluster's next point to NULL
 	 }
+
 
 	 this->num_clusters_ = num_segments;
 	 this->uttid_ = non_clustered_segments.UttID();
+	 this->head_cluster_ = head_cluster;
 	 return;
 }
 
@@ -102,9 +106,11 @@ Cluster* ClusterCollection::Head() {
 
 
 void ClusterCollection::BottomUpClustering(const Matrix<BaseFloat> &feats, int32 target_cluster_num) {
-	while(num_clusters_ > target_cluster_num) {
+	while(this->num_clusters_ > target_cluster_num) {
 		std::vector<Cluster*> min_dist_clusters(2);
 		FindMinDistClusters(feats, min_dist_clusters);
+		if (min_dist_clusters[0]==NULL || min_dist_clusters[1]==NULL) 
+				KALDI_ERR << "NULL CLUSTER!";
 		MergeClusters(min_dist_clusters[0], min_dist_clusters[1]);
 		this->num_clusters_--;
 	}
@@ -114,11 +120,9 @@ void ClusterCollection::BottomUpClustering(const Matrix<BaseFloat> &feats, int32
 void ClusterCollection::FindMinDistClusters(const Matrix<BaseFloat> &feats, std::vector<Cluster*> &min_dist_clusters) {
 	if(num_clusters_<2) KALDI_ERR << "Less than two clusters, could not find min dist clusters";
 	Cluster* p1 = this->head_cluster_;
-	Cluster* p2 = p1->next;
-	BaseFloat min_dist = 100000.0; // set a random large number
+	BaseFloat min_dist = FLT_MAX; // set a random large number
 	while(p1){
-		if(p1->next==NULL) break;
-		p2 = p1->next;
+		Cluster* p2 = p1->next;
 		while(p2) {
 			BaseFloat dist = DistanceOfTwoClusters(feats, p1, p2);
 			if(dist<min_dist) {
@@ -126,28 +130,31 @@ void ClusterCollection::FindMinDistClusters(const Matrix<BaseFloat> &feats, std:
 				min_dist_clusters[0] = p1;
 				min_dist_clusters[1] = p2;
 			}
+			p2 = p2->next;
 		}
+		p1 = p1->next;
 	}
 	return;
 }
 
 
-BaseFloat ClusterCollection::DistanceOfTwoClusters(const Matrix<BaseFloat> &feats, Cluster* cluster1, Cluster* cluster2) {
+BaseFloat ClusterCollection::DistanceOfTwoClusters(const Matrix<BaseFloat> &feats, const Cluster* cluster1, const Cluster* cluster2) {
 
-	Cluster cluster1_copy(*cluster1);
-	Cluster cluster2_copy(*cluster2);
-	ClusterCollection::MergeClusters(&cluster1_copy,&cluster2_copy);
-	Cluster* cluster12 = &cluster1_copy;
+	if(!cluster1 || !cluster2) KALDI_ERR << "CLUSTER COULD NOT BE NULL!";
+	Cluster* cluster1_copy = new Cluster(*cluster1);
+	Cluster* cluster2_copy = new Cluster(*cluster2);
+	// Avoid the original clusters connection is corrupte during merging for logdet computation
+	cluster2_copy->next = NULL;
+	cluster2_copy->prev = NULL;
 
+	ClusterCollection::MergeClusters(cluster1_copy,cluster2_copy);
+	Cluster* cluster12 = cluster1_copy;
 	BaseFloat log_det12 = cluster12->LogDet(feats);
 	BaseFloat log_det1 = cluster1->LogDet(feats);
 	BaseFloat log_det2 = cluster2->LogDet(feats);
-
 	BaseFloat dist = log_det12 * cluster12->NumFrames() - log_det1 * cluster1->NumFrames() - log_det2 * cluster2->NumFrames();
 
-	delete [] &cluster1_copy;
-	delete [] &cluster2_copy;
-	delete [] cluster12;
+	delete cluster12;
 
 	return 0.5*dist;
 }
@@ -162,7 +169,8 @@ void ClusterCollection::MergeClusters(Cluster* clust1, Cluster* clust2) {
 	if(clust2->prev) clust2->prev->next = clust2->next;
 	if(clust2->next) clust2->next->prev = clust2->prev; 
 
-	delete [] clust2;
+	delete clust2;
+	return;
 }
 
 
@@ -185,6 +193,7 @@ void ClusterCollection::Write(const std::string& segments_dirname) {
 			fout << seg_end << " ";
 			fout << clst_label << "\n";
 		}
+		curr=curr->next;
 	}
 
 	fscp << segments_wxfilename << "\n";

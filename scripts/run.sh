@@ -63,9 +63,9 @@ bottom_up_clustering(){
 
     x=$1	
 
-    mkdir -p exp/clustering/$x/segments; rm -rf exp/clustering/$x/segments
+    mkdir -p exp/clustering/$x/segments; rm -f exp/clustering/$x/segments/*
     feats="ark,s,cs:add-deltas $delta_opts scp:data/$x/feats.scp ark:- | apply-cmvn-sliding --norm-vars=false --center=true --cmn-window=300 ark:- ark:- |"	
-    segmentClustering exp/ref/$x/segments/segments.scp "$feats" exp/clustering/$x/segments 	
+    segmentClustering --target_cluster_num=2 exp/ref/$x/segments/segments.scp "$feats" exp/clustering/$x/segments 	
 
     log_end "Bottom Up Clustering"
 }

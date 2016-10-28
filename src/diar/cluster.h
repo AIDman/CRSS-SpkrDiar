@@ -17,12 +17,12 @@ class Cluster {
 public:
 	Cluster(Segment one_segment);
 	void AddSegment(Segment new_segment);
-	std::vector<Segment> AllSegments();
-	std::string Label();
-	int32 NumFrames();
-	int32 NumSegments();
-	Segment KthSegment(int32 k);
-	BaseFloat LogDet(const Matrix<BaseFloat> &feats);
+	std::vector<Segment> AllSegments() const;
+	std::string Label() const;
+	int32 NumFrames() const;
+	int32 NumSegments() const;
+	Segment KthSegment(int32 k) const;
+	BaseFloat LogDet(const Matrix<BaseFloat> &feats) const; 
 	Cluster* prev;
 	Cluster* next;
 
@@ -45,7 +45,7 @@ public:
 	void BottomUpClustering(const Matrix<BaseFloat> &feats, int32 target_cluster_num);
 	void FindMinDistClusters(const Matrix<BaseFloat> &feats, std::vector<Cluster*> &min_dist_clusters);
 	static void MergeClusters(Cluster* clust1, Cluster* clust2);
-	BaseFloat DistanceOfTwoClusters(const Matrix<BaseFloat> &feats, Cluster* cluster1, Cluster* cluster2);
+	BaseFloat DistanceOfTwoClusters(const Matrix<BaseFloat> &feats, const Cluster* cluster1, const Cluster* cluster2);
 	void Write(const std::string& segment_dir);
 	Cluster* Head();
 
