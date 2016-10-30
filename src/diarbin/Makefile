@@ -4,7 +4,7 @@ all:
 #KALDI_DIR = /home/nxs113020/kaldi-trunk
 KALDI_DIR = /home/chengzhu/work/Toolhouse/kaldi-trunk
 
-EXTRA_CXXFLAGS = -Wno-sign-compare -I${KALDI_DIR}/src
+EXTRA_CXXFLAGS = -Wno-sign-compare -I${KALDI_DIR}/src -std=c++11
 include ${KALDI_DIR}/src/kaldi.mk
 
 #BINFILES = changeDetectBIC segIvectorExtract ivectorTest glpkIlpTemplate glpkToRTTM labelToRTTM

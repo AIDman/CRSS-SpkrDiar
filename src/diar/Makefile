@@ -5,7 +5,7 @@ all:
 KALDI_DIR = /home/chengzhu/work/Toolhouse/kaldi-trunk
 OPENFST_CXXFLAGS = 
 OPENFST_LDLIBS = 
-EXTRA_CXXFLAGS = -I${KALDI_DIR}/src
+EXTRA_CXXFLAGS = -I${KALDI_DIR}/src -std=c++11
 
 include ${KALDI_DIR}/src/kaldi.mk
 

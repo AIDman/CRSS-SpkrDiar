@@ -6,6 +6,7 @@
 #include <iostream>
 #include <fstream>
 #include <sstream>
+#include <unordered_map>
 #include "util/common-utils.h"
 #include "matrix/matrix-lib.h"
 #include "diar-utils.h"
@@ -43,10 +44,12 @@ public:
 	void InitFromNonLabeledSegments(SegmentCollection non_clustered_segmemts);
 	//InitFromLabeledSegments(SegmentCollection);
 	void BottomUpClustering(const Matrix<BaseFloat> &feats, int32 target_cluster_num);
-	void FindMinDistClusters(const Matrix<BaseFloat> &feats, std::vector<Cluster*> &min_dist_clusters);
+	void FindMinDistClusters(const Matrix<BaseFloat> &feats, std::vector<std::vector<BaseFloat> >& dist_matrix, 
+		std::vector<bool>& to_be_updated, std::unordered_map<Cluster*, int32>& cluster_idx_map, std::vector<Cluster*> &min_dist_clusters);
 	static void MergeClusters(Cluster* clust1, Cluster* clust2);
 	BaseFloat DistanceOfTwoClusters(const Matrix<BaseFloat> &feats, const Cluster* cluster1, const Cluster* cluster2);
 	void Write(const std::string& segment_dir);
+	void WriteToRttm(const std::string& rttmName);
 	Cluster* Head();
 
 private:
