@@ -42,21 +42,14 @@ int main(int argc, char *argv[]) {
 
             // read features
             const Matrix<BaseFloat> &feats = feature_reader.Value(utt_segments.UttID());
-            // check file mismatch
-            //if(uttSegments.UttID() != key){
-            //        KALDI_ERR << "Feature and Sements file UttID mismatch";
-            //}
-
-            // start clustering
             SegmentCollection speech_segments = utt_segments.GetSpeechSegments();
             ClusterCollection segment_clusters;
             segment_clusters.InitFromNonLabeledSegments(speech_segments);
             segment_clusters.BottomUpClustering(feats, target_cluster_num);
             segment_clusters.Write(segments_dirname);
 
-            // write to rttm
-            std::string rttm_wspecifier = rttm_outputdir + "/" + segment_clusters.UttID() +".rttm";
-            segment_clusters.WriteToRttm(rttm_wspecifier);
+            //write to rttm
+            segment_clusters.WriteToRttm(rttm_outputdir);
         }
 
     } catch(const std::exception &e) {

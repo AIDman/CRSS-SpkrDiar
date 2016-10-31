@@ -175,7 +175,7 @@ SpMatrix<T> computeWithinCovariance(const std::vector< Vector<T> >& vectorOfFeat
 	return W;
 }
 
-/*
+
 template <class T>
 T logDetCovariance(Matrix<T>& data) {
 	// Calculates the covariance of data and returns its 
@@ -183,21 +183,21 @@ T logDetCovariance(Matrix<T>& data) {
 	int32 numFrames = data.NumRows();
 	int32 dim = data.NumCols();
 
-	Vector<T> meanVec(dim), covVec(dim); 
+	Vector<T> meanVec(dim), covVec(dim);
 	for (size_t i = 0; i < numFrames; i++) {
 		meanVec.AddVec(1./numFrames,data.Row(i));
 		covVec.AddVec2(1./numFrames,data.Row(i));
 	}
 	covVec.AddVec2(-1.0, meanVec);
-	T logCovDet = 0;
+	T logCovDet = 0.0;
 	for (size_t i = 0; i < dim; i++) {
 		logCovDet += log(covVec(i));
 	}
 	return logCovDet;
 }
-*/
 
 
+/*
 template <class T>
 T logDetCovariance(Matrix<T>& data) {
 	// Calculates the covariance of data and returns its 
@@ -214,6 +214,7 @@ T logDetCovariance(Matrix<T>& data) {
 
 	return log_det;
 }
+*/
 
 template<class T>
 void computeMean(const std::vector< Vector<T> >& vectorOfFeatures,

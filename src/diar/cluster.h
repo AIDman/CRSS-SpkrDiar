@@ -23,7 +23,11 @@ public:
 	int32 NumFrames() const;
 	int32 NumSegments() const;
 	Segment KthSegment(int32 k) const;
-	BaseFloat LogDet(const Matrix<BaseFloat> &feats) const; 
+	BaseFloat LogDet(const Matrix<BaseFloat> &feats) const;
+	static Vector<BaseFloat> ComputeMean(const Matrix<BaseFloat>& feats, const Cluster* clust); 
+	static Vector<BaseFloat> ComputeCovDiag(const Matrix<BaseFloat>& feats, const Cluster* clust);
+	static Vector<BaseFloat> ComputeSum(const Matrix<BaseFloat>& feats, const Cluster* clust); 
+	static Vector<BaseFloat> ComputeVarSum(const Matrix<BaseFloat>& feats, const Cluster* clust);
 	Cluster* prev;
 	Cluster* next;
 
@@ -47,9 +51,10 @@ public:
 	void FindMinDistClusters(const Matrix<BaseFloat> &feats, std::vector<std::vector<BaseFloat> >& dist_matrix, 
 		std::vector<bool>& to_be_updated, std::unordered_map<Cluster*, int32>& cluster_idx_map, std::vector<Cluster*> &min_dist_clusters);
 	static void MergeClusters(Cluster* clust1, Cluster* clust2);
-	BaseFloat DistanceOfTwoClusters(const Matrix<BaseFloat> &feats, const Cluster* cluster1, const Cluster* cluster2);
+	BaseFloat DistanceOfTwoClustersGLR(const Matrix<BaseFloat> &feats, const Cluster* cluster1, const Cluster* cluster2);
+	BaseFloat DistanceOfTwoClustersKL2(const Matrix<BaseFloat> &feats, const Cluster* cluster1, const Cluster* cluster2); 
 	void Write(const std::string& segment_dir);
-	void WriteToRttm(const std::string& rttmName);
+	void WriteToRttm(const std::string& rttm_outputdir);
 	Cluster* Head();
 
 private:
