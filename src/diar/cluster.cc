@@ -115,22 +115,61 @@ Vector<BaseFloat> Cluster::ComputeVarSum(const Matrix<BaseFloat>& feats, const C
 	return cov_vec;
 }
 
-
+/* 
+This code will be primary used for debugging
 BaseFloat Cluster::LogDet(const Matrix<BaseFloat> &feats) const {
-	Matrix<BaseFloat> feats_collect;
-	int32 featdim = feats.NumCols();
-	int32 tot_frames = 0;
-	int32 insert_frame = 0;
-	for(int i=0;i<this->list_.size();i++) {
-		Segment seg = this->list_[i];
-		int32 seg_size = seg.Size();
-		tot_frames += seg_size;
-		feats_collect.Resize(tot_frames, featdim);
-		feats_collect.Range(insert_frame, seg_size, 0, featdim).CopyFromMat(feats.Range(seg.StartIdx(),seg_size,0,featdim));
-		insert_frame += seg_size;
+	int32 dim = feats.NumCols();
+	int32 numFrames = this->frames_;
+	Matrix<BaseFloat> feats_collect(numFrames, dim);
+	std::vector<Segment> all_segments = this->list_;
+
+	int32 k = 0;
+	for(int32 i=0;i<all_segments.size();i++) {
+		Segment seg = all_segments[i];
+		for(int32 j=seg.StartIdx();j<seg.StartIdx()+seg.Size();j++) {
+			feats_collect.Row(k).CopyFromVec(feats.Row(j));
+			k++;
+		}
+	}
+	
+	Vector<BaseFloat> meanVec(dim), covVec(dim);
+	
+	//for( size_t i=0; i< all_segments.size(); i++) {
+	//	Segment seg = all_segments[i];
+	//	for(int j = seg.StartIdx(); j<=seg.EndIdx(); j++) {
+	//		meanVec.AddVec(1.0,feats.Row(j));
+	//		covVec.AddVec2(1.0,feats.Row(j));
+	//	}
+	//}
+	
+	for( size_t i=0; i<numFrames; i++) {
+			meanVec.AddVec(1.0,feats_collect.Row(i));
+			covVec.AddVec2(1.0,feats_collect.Row(i));
 	}
 
-	return logDetCovariance(feats_collect);
+	BaseFloat z = 1.0 / numFrames;
+	BaseFloat zz = z*z;
+	BaseFloat s = 0.0;
+
+	for (int i=0; i<feats.NumCols();i++) {
+		s += log(covVec(i) * z - meanVec(i) * meanVec(i) *zz);
+	}
+	return s;	
+}
+*/
+
+
+// Followed implementation in Audioseg.
+BaseFloat Cluster::LogDet(const Matrix<BaseFloat> &feats) const {
+	Vector<BaseFloat> m = Cluster::ComputeSum(feats, this);
+	Vector<BaseFloat> v = Cluster::ComputeVarSum(feats, this);
+	BaseFloat z = 1.0 / this->frames_;
+	BaseFloat zz = z * z;
+	BaseFloat s = 0.0;
+	for (int i=0; i<feats.NumCols();i++) {
+		s += log(v(i) * z - m(i) * m(i) *zz);
+	}
+	return s;
 }
 
 
@@ -272,6 +311,7 @@ BaseFloat ClusterCollection::DistanceOfTwoClustersGLR(const Matrix<BaseFloat> &f
 }
 */
 
+
 // Repeat GLR distance calculation in Audioseg. Does not seem to correct mathematically, but performs better..
 BaseFloat ClusterCollection::DistanceOfTwoClustersGLR(const Matrix<BaseFloat> &feats, const Cluster* cluster1, const Cluster* cluster2) {
 	BaseFloat log_det1 = cluster1->LogDet(feats);
@@ -305,8 +345,8 @@ BaseFloat ClusterCollection::DistanceOfTwoClustersGLR(const Matrix<BaseFloat> &f
 	return 0.5*dist;
 }
 
-BaseFloat ClusterCollection::DistanceOfTwoClustersKL2(const Matrix<BaseFloat> &feats, const Cluster* cluster1, const Cluster* cluster2) {
 
+BaseFloat ClusterCollection::DistanceOfTwoClustersKL2(const Matrix<BaseFloat> &feats, const Cluster* cluster1, const Cluster* cluster2) {
 	Vector<BaseFloat> mean_vec_1 = Cluster::ComputeMean(feats, cluster1);
 	Vector<BaseFloat> mean_vec_2 = Cluster::ComputeMean(feats, cluster2);
 	Vector<BaseFloat> cov_vec_1 = Cluster::ComputeCovDiag(feats, cluster1);
@@ -326,52 +366,12 @@ BaseFloat ClusterCollection::DistanceOfTwoClustersKL2(const Matrix<BaseFloat> &f
 	return dist;	
 }
 
-/*
-BaseFloat ClusterCollection::DistanceOfTwoClustersGLR(const Matrix<BaseFloat> &feats, const Cluster* cluster1, const Cluster* cluster2) {
-
-	BaseFloat log_det1 = cluster1->LogDet(feats);
-	BaseFloat log_det2 = cluster2->LogDet(feats);
-
-	Matrix<BaseFloat> feats_collect;
-	std::vector<Segment> cluster1_segments = cluster1->AllSegments();
-	std::vector<Segment> cluster2_segments = cluster2->AllSegments();
-	int32 featdim = feats.NumCols();
-	int32 tot_frames = 0;
-	int32 insert_frame = 0;
-	for(int i=0;i<cluster1_segments.size();i++) {
-		Segment seg = cluster1_segments[i];
-		int32 seg_size = seg.Size();
-		tot_frames += seg_size;
-		feats_collect.Resize(tot_frames, featdim);
-		feats_collect.Range(insert_frame, seg_size, 0, featdim).CopyFromMat(feats.Range(seg.StartIdx(),seg_size,0,featdim));
-		insert_frame += seg_size;
-	}
-	for(int i=0;i<cluster2_segments.size();i++) {
-		Segment seg = cluster2_segments[i];
-		int32 seg_size = seg.Size();
-		tot_frames += seg_size;
-		feats_collect.Resize(tot_frames, featdim);
-		feats_collect.Range(insert_frame, seg_size, 0, featdim).CopyFromMat(feats.Range(seg.StartIdx(),seg_size,0,featdim));
-		insert_frame += seg_size;
-	}
-	
-
-	BaseFloat log_det12 = logDetCovariance(feats_collect);
-	BaseFloat dist = log_det12 * tot_frames - log_det1 * cluster1->NumFrames() - log_det2 * cluster2->NumFrames();
-	//KALDI_LOG << dist << " " << tot_frames << " " << log_det12 << " " << cluster1->NumFrames() << " " << log_det1 << " " << cluster2->NumFrames() << " " << log_det2;
-	return dist*0.5;
-}
-*/
-
-
-
 
 void ClusterCollection::MergeClusters(Cluster* clust1, Cluster* clust2) {
 	std::vector<Segment> clust2_segments = clust2->AllSegments();
 	for(int i=0; i<clust2_segments.size();i++) {
 		clust1->AddSegment(clust2_segments[i]);
 	}
-
 
 	if(clust2->prev) clust2->prev->next = clust2->next;
 	if(clust2->next) clust2->next->prev = clust2->prev; 
@@ -407,6 +407,7 @@ void ClusterCollection::Write(const std::string& segments_dirname) {
 	fscp.close();
 	fout.close();
 }
+
 
 void ClusterCollection::WriteToRttm(const std::string& rttm_outputdir) {
 	std::string rttmName = rttm_outputdir + "/" + this->uttid_ +".rttm";
