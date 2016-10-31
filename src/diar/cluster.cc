@@ -82,7 +82,7 @@ Vector<BaseFloat> Cluster::ComputeCovDiag(const Matrix<BaseFloat>& feats, const 
 }
 
 
-// To Repeat the code in Audioseg
+// To Repeat the GLR code in Audioseg
 Vector<BaseFloat> Cluster::ComputeSum(const Matrix<BaseFloat>& feats, const Cluster* clust) {
 	std::vector<Segment> all_segments = clust->AllSegments();
 	int32 dim = feats.NumCols();
@@ -99,7 +99,7 @@ Vector<BaseFloat> Cluster::ComputeSum(const Matrix<BaseFloat>& feats, const Clus
 }
 
 
-// To Repeat the code in Audioseg
+// To Repeat the GLR code in Audioseg
 Vector<BaseFloat> Cluster::ComputeVarSum(const Matrix<BaseFloat>& feats, const Cluster* clust) {
 	std::vector<Segment> all_segments = clust->AllSegments();
 	int32 dim = feats.NumCols();
@@ -114,49 +114,6 @@ Vector<BaseFloat> Cluster::ComputeVarSum(const Matrix<BaseFloat>& feats, const C
 	}
 	return cov_vec;
 }
-
-/* 
-This code will be primary used for debugging
-BaseFloat Cluster::LogDet(const Matrix<BaseFloat> &feats) const {
-	int32 dim = feats.NumCols();
-	int32 numFrames = this->frames_;
-	Matrix<BaseFloat> feats_collect(numFrames, dim);
-	std::vector<Segment> all_segments = this->list_;
-
-	int32 k = 0;
-	for(int32 i=0;i<all_segments.size();i++) {
-		Segment seg = all_segments[i];
-		for(int32 j=seg.StartIdx();j<seg.StartIdx()+seg.Size();j++) {
-			feats_collect.Row(k).CopyFromVec(feats.Row(j));
-			k++;
-		}
-	}
-	
-	Vector<BaseFloat> meanVec(dim), covVec(dim);
-	
-	//for( size_t i=0; i< all_segments.size(); i++) {
-	//	Segment seg = all_segments[i];
-	//	for(int j = seg.StartIdx(); j<=seg.EndIdx(); j++) {
-	//		meanVec.AddVec(1.0,feats.Row(j));
-	//		covVec.AddVec2(1.0,feats.Row(j));
-	//	}
-	//}
-	
-	for( size_t i=0; i<numFrames; i++) {
-			meanVec.AddVec(1.0,feats_collect.Row(i));
-			covVec.AddVec2(1.0,feats_collect.Row(i));
-	}
-
-	BaseFloat z = 1.0 / numFrames;
-	BaseFloat zz = z*z;
-	BaseFloat s = 0.0;
-
-	for (int i=0; i<feats.NumCols();i++) {
-		s += log(covVec(i) * z - meanVec(i) * meanVec(i) *zz);
-	}
-	return s;	
-}
-*/
 
 
 // Followed implementation in Audioseg.
@@ -216,7 +173,9 @@ Cluster* ClusterCollection::Head() {
 }
 
 
-void ClusterCollection::BottomUpClustering(const Matrix<BaseFloat> &feats, int32 target_cluster_num) {
+void ClusterCollection::BottomUpClustering(const Matrix<BaseFloat> &feats, int32 target_cluster_num, const int32& dist_type) {
+	this->dist_type_ = dist_type;
+
 	// Give each initial cluster and idx number, to easy manipulation
 	std::unordered_map<Cluster*, int32> cluster_idx_map;
 	Cluster* curr = this->head_cluster_;
@@ -264,9 +223,25 @@ void ClusterCollection::FindMinDistClusters(const Matrix<BaseFloat> &feats, std:
 			int32 p2_idx = cluster_idx_map[p2];
 			
 			if(!to_be_updated[p1_idx]) {
+				// been updated before, avoid recalculation
 				dist = dist_matrix[p1_idx][p2_idx];
+
 			}else{
-				dist = DistanceOfTwoClustersGLR(feats, p1, p2);
+				// to be updated
+
+				switch(this->dist_type_) {
+				
+				case GLR_DISTANCE:
+					dist = DistanceOfTwoClustersGLR(feats, p1, p2);
+					break;
+				
+				case KL2_DISTANCE:
+					dist = DistanceOfTwoClustersKL2(feats, p1, p2);
+					break;
+
+				default:;
+				}
+
 				dist_matrix[p1_idx][p2_idx] = dist;
 			}
 
@@ -284,7 +259,7 @@ void ClusterCollection::FindMinDistClusters(const Matrix<BaseFloat> &feats, std:
 	return;
 }
 
-/*
+
 BaseFloat ClusterCollection::DistanceOfTwoClustersGLR(const Matrix<BaseFloat> &feats, const Cluster* cluster1, const Cluster* cluster2) {
 
 	if(!cluster1 || !cluster2) KALDI_ERR << "CLUSTER COULD NOT BE NULL!";
@@ -300,47 +275,8 @@ BaseFloat ClusterCollection::DistanceOfTwoClustersGLR(const Matrix<BaseFloat> &f
 	BaseFloat log_det1 = cluster1->LogDet(feats);
 	BaseFloat log_det2 = cluster2->LogDet(feats);
 	BaseFloat dist = log_det12 * cluster12->NumFrames() - log_det1 * cluster1->NumFrames() - log_det2 * cluster2->NumFrames();
-	//KALDI_LOG << dist << " " << cluster12->NumFrames() << " " << log_det12 << " " << cluster1->NumFrames() << " " << log_det1 << " " << cluster2->NumFrames() << " " << log_det2;
-	//KALDI_LOG <<  log_det12 << " " << cluster12->NumFrames() ;
-	//KALDI_LOG <<  log_det1 << " " << log_det2 << " " << cluster2->NumFrames() << " IDX: " << cluster2->AllSegments()[0].StartIdx() << " " << cluster2->AllSegments()[0].EndIdx();
-	//KALDI_LOG << feats.Range(cluster2->AllSegments()[0].StartIdx(), cluster2->NumFrames(), 0, feats.NumCols());
 
 	delete cluster12;
-
-	return 0.5*dist;
-}
-*/
-
-
-// Repeat GLR distance calculation in Audioseg. Does not seem to correct mathematically, but performs better..
-BaseFloat ClusterCollection::DistanceOfTwoClustersGLR(const Matrix<BaseFloat> &feats, const Cluster* cluster1, const Cluster* cluster2) {
-	BaseFloat log_det1 = cluster1->LogDet(feats);
-	BaseFloat log_det2 = cluster2->LogDet(feats);
-
-	Vector<BaseFloat> m1 = Cluster::ComputeSum(feats, cluster1);
-	Vector<BaseFloat> m2 = Cluster::ComputeSum(feats, cluster2);
-	Vector<BaseFloat> v1 = Cluster::ComputeVarSum(feats, cluster1);
-	Vector<BaseFloat> v2 = Cluster::ComputeVarSum(feats, cluster2);
-
-	int32 n = cluster1->NumFrames() + cluster2->NumFrames();
-	BaseFloat z = 1.0 / n;
-	BaseFloat zz = z * z;
-
-	Vector<BaseFloat> mean_sum(feats.NumCols());
-	mean_sum.AddVec(1.0, m1);
-	mean_sum.AddVec(1.0, m2);
-
-	Vector<BaseFloat> cov_sum(feats.NumCols());
-	cov_sum.AddVec(z, v1);
-	cov_sum.AddVec(z, v2);
-	cov_sum.AddVec2(-1.0*zz, mean_sum);
-
-	BaseFloat s = 0.0;
-	for(int i = 0; i<feats.NumCols(); i++) {
-		s += log(cov_sum(i));
-	}
-
-	BaseFloat dist = n*s - log_det1 * cluster1->NumFrames() - log_det2 * cluster2->NumFrames();
 
 	return 0.5*dist;
 }

@@ -14,6 +14,9 @@
 
 namespace kaldi{
 
+#define GLR_DISTANCE 0
+#define KL2_DISTANCE 1
+
 class Cluster {
 public:
 	Cluster(Segment one_segment);
@@ -47,7 +50,7 @@ public:
 	string UttID();
 	void InitFromNonLabeledSegments(SegmentCollection non_clustered_segmemts);
 	//InitFromLabeledSegments(SegmentCollection);
-	void BottomUpClustering(const Matrix<BaseFloat> &feats, int32 target_cluster_num);
+	void BottomUpClustering(const Matrix<BaseFloat> &feats, int32 target_cluster_num, const int32& dist_type = 0);
 	void FindMinDistClusters(const Matrix<BaseFloat> &feats, std::vector<std::vector<BaseFloat> >& dist_matrix, 
 		std::vector<bool>& to_be_updated, std::unordered_map<Cluster*, int32>& cluster_idx_map, std::vector<Cluster*> &min_dist_clusters);
 	static void MergeClusters(Cluster* clust1, Cluster* clust2);
@@ -61,6 +64,7 @@ private:
 	string uttid_;
 	int32 num_clusters_;
 	Cluster* head_cluster_;
+	int32 dist_type_;
 };
 
 

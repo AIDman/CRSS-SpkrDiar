@@ -64,11 +64,8 @@ bottom_up_clustering(){
     x=$1	
 
     mkdir -p exp/clustering/$x/segments exp/clustering/$x/rttms; rm -f exp/clustering/$x/segments/*; rm -f exp/clustering/$x/rttms/*
-    #feats="ark,s,cs:add-deltas $delta_opts scp:data/$x/feats.scp ark:- | apply-cmvn-sliding --norm-vars=true --center=true --cmn-window=3000 ark:- ark:- |"	
-    #feats="ark,s,cs:copy-feats scp:data/$x/feats.scp ark:- | apply-cmvn scp:data/$x/cmvn.scp ark:- ark:- | add-deltas ark:- ark:- |"	
-    #feats="ark,s,cs:copy-feats scp:data/$x/feats.scp ark:- | apply-cmvn --norm-vars=true scp:data/$x/cmvn.scp ark:- ark:- | add-deltas --delta-order=1 ark:- ark:-|"	
-    feats="ark,s,cs:copy-feats scp:data/$x/feats.scp ark:- | apply-cmvn --norm-vars=true scp:data/$x/cmvn.scp ark:- ark:- |"
-    segmentClustering --target_cluster_num=3 exp/ref/$x/segments/segments.scp "$feats" exp/clustering/$x/segments exp/clustering/$x/rttms 2>&1 | tee log
+    feats="ark,s,cs:copy-feats scp:data/$x/feats.scp ark:- | apply-cmvn --norm-vars=true scp:data/$x/cmvn.scp ark:- ark:- | add-deltas --delta-order=1 ark:- ark:-|"	
+    segmentClustering --target_cluster_num=3 --dist_type=GLR exp/ref/$x/segments/segments.scp "$feats" exp/clustering/$x/segments exp/clustering/$x/rttms 2>&1 | tee log
     
     diar/compute_DER.sh --sanity_check false exp/ref/$x/rttms exp/clustering/$x/rttms exp/result_DER/$x		
 

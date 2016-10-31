@@ -15,9 +15,11 @@ int main(int argc, char *argv[]) {
         const char *usage = "Bottom Up clustering on segments, initial clustering using GLR, BIC. \n";
 
         int32 target_cluster_num = 0;
+        std::string dist_type = "GLR";
 
         kaldi::ParseOptions po(usage);
         po.Register("target_cluster_num", &target_cluster_num, "Target cluster number as stopping criterion");
+        po.Register("dist_type", &dist_type, "Distance Type Used For Clustering. Currently Supports GLR, KL2");
         po.Read(argc, argv);
 
         if (po.NumArgs() != 4) {
@@ -44,8 +46,15 @@ int main(int argc, char *argv[]) {
             const Matrix<BaseFloat> &feats = feature_reader.Value(utt_segments.UttID());
             SegmentCollection speech_segments = utt_segments.GetSpeechSegments();
             ClusterCollection segment_clusters;
+ 
             segment_clusters.InitFromNonLabeledSegments(speech_segments);
-            segment_clusters.BottomUpClustering(feats, target_cluster_num);
+ 
+            if(dist_type == "GLR") {
+                segment_clusters.BottomUpClustering(feats, target_cluster_num, GLR_DISTANCE);
+            }else if(dist_type == "KL2") {
+                segment_clusters.BottomUpClustering(feats, target_cluster_num, KL2_DISTANCE);
+            }
+
             segment_clusters.Write(segments_dirname);
 
             //write to rttm
