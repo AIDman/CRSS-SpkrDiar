@@ -141,6 +141,16 @@ string ClusterCollection::UttID() {
 }
 
 
+int32 ClusterCollection::NumFrames() {
+	Cluster* curr = this->head_cluster_;
+	int32 tot_frames = 0;
+	while(curr) {
+		tot_frames += curr->NumFrames();
+		curr = curr->next;
+	}
+	return tot_frames;
+}
+
 void ClusterCollection::InitFromNonLabeledSegments(SegmentCollection non_clustered_segments) {
 	 int32 num_segments = non_clustered_segments.Size();
 	 if(num_segments < 1) KALDI_ERR << "Clusters could not be initialized from empty segments";
@@ -173,7 +183,11 @@ Cluster* ClusterCollection::Head() {
 }
 
 
-void ClusterCollection::BottomUpClustering(const Matrix<BaseFloat> &feats, int32 target_cluster_num, const int32& dist_type) {
+/* Bottom Up Clustering Using GLR or KL2 Distance. The penalty factor lambda is set to FLX_MAT by default, 
+ * this will cause the clustering continues untill one cluster left, or meets other critera. 
+ * The target_cluster_num is also set to 0 following the same logic. 
+ */
+void ClusterCollection::BottomUpClustering(const Matrix<BaseFloat> &feats, const BaseFloat& lambda, int32 target_cluster_num, const int32& dist_type) {
 	this->dist_type_ = dist_type;
 
 	// Give each initial cluster and idx number, to easy manipulation
@@ -190,13 +204,31 @@ void ClusterCollection::BottomUpClustering(const Matrix<BaseFloat> &feats, int32
 	std::vector<std::vector<BaseFloat>> dist_matrix(this->num_clusters_, std::vector<BaseFloat>(100000.0, num_clusters_));
 	std::vector<bool> to_be_updated(this->num_clusters_, true);
 
+	// Compute the penalty BIC critera
+	int32 dim = feats.NumCols();
+	int32 tot_frames = this->NumFrames();
+	int32 init_cluster_num = this->num_clusters_;
+	BaseFloat penalty = 0.5 * (dim + dim) * log(tot_frames);
+
 	// Start HAC clustering
-	while(this->num_clusters_ > target_cluster_num) {
+	while(this->num_clusters_ > 1) {
+
 		std::vector<Cluster*> min_dist_clusters(2);
 		FindMinDistClusters(feats, dist_matrix, to_be_updated, cluster_idx_map, min_dist_clusters);
+
 		if (min_dist_clusters[0]==NULL || min_dist_clusters[1]==NULL) 
 				KALDI_ERR << "NULL CLUSTER!";
+
+		BaseFloat dist_glr = DistanceOfTwoClustersGLR(feats, min_dist_clusters[0], min_dist_clusters[1]);
+		BaseFloat delta_bic = dist_glr - lambda * penalty;
+
+		if(delta_bic > 0 || this->num_clusters_ <= target_cluster_num) {
+			KALDI_LOG << "Cluster Number Reduced From: " << init_cluster_num << " To "<< num_clusters_;
+			return;
+		} 	
+
 		MergeClusters(min_dist_clusters[0], min_dist_clusters[1]);
+
 		for(size_t i=0; i<to_be_updated.size();i++) {
 			if(i == cluster_idx_map[min_dist_clusters[0]]) {
 				to_be_updated[i] = true;
@@ -204,8 +236,10 @@ void ClusterCollection::BottomUpClustering(const Matrix<BaseFloat> &feats, int32
 				to_be_updated[i] = false;
 			}
 		}
+
 		this->num_clusters_--;
 	}
+	return;
 }
 
 
@@ -255,7 +289,6 @@ void ClusterCollection::FindMinDistClusters(const Matrix<BaseFloat> &feats, std:
 		}
 		p1 = p1->next;
 	}
-	KALDI_LOG << min_dist << " " << min_dist_clusters[0]->NumFrames() << " " << min_dist_clusters[0]->LogDet(feats) << " " << min_dist_clusters[1]->NumFrames() << " " << min_dist_clusters[1]->LogDet(feats);
 	return;
 }
 

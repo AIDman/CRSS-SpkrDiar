@@ -35,17 +35,14 @@ for f in $ref_dir/rttms.scp $match_dir/rttms.scp; do
   fi
 done
 
-mkdir -p $result_dir/log; rm -f $result_dir/* ; rm -f $result_dir/log/*
+mkdir -p $result_dir/log; rm -rf $result_dir/*
 
-for x in `cat $match_dir/rttms.scp`; do
-    utt=`basename $x`
-	
-    cat $match_dir/$utt >> $result_dir/match.rttm
-    cat $ref_dir/$utt >> $result_dir/ref.rttm
-done
-    
-$sanity_check && cat $result_dir/match.rttm | awk '{$8=1;print $0}' > $result_dir/fake.rttm	
+while read ref <&3 && read match<&4; do
+	#$sanity_check && cat $result_dir/match.rttm | awk '{$8=1;print $0}' > $result_dir/fake.rttm	
+	#$sanity_check && perl local/md-eval-v21.pl -r $result_dir/ref.rttm -s $result_dir/fake.rttm 2>&1 | tee $result_dir/diar_err.fake  	
 
-perl local/md-eval-v21.pl -r $result_dir/ref.rttm -s $result_dir/match.rttm 2>&1 | tee $result_dir/diar_err   	
-$sanity_check && perl local/md-eval-v21.pl -r $result_dir/ref.rttm -s $result_dir/fake.rttm 2>&1 | tee $result_dir/diar_err.fake  	
+	name=`basename $ref .rttm`
+
+	perl local/md-eval-v21.pl -r $ref -s $match > $result_dir/${name}.der 
  
+done 3<$ref_dir/rttms.scp 4<$match_dir/rttms.scp
