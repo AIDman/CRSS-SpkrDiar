@@ -10,6 +10,7 @@
 #include "util/common-utils.h"
 #include "matrix/matrix-lib.h"
 #include "diar-utils.h"
+#include "segment.h"
 
 
 namespace kaldi{

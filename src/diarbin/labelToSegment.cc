@@ -5,6 +5,7 @@
 #include "util/common-utils.h"
 #include "base/kaldi-common.h"
 #include "diar/diar-utils.h"
+#include "diar/segment.h"
 
 int main(int argc, char *argv[]) {
 	typedef kaldi::int32 int32;

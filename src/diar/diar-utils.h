@@ -14,10 +14,7 @@
 #include "ivector/ivector-extractor.h"
 #include "ivector/plda.h"
 
-
 namespace kaldi{
-//typedef std::pair<std::string, std::vector<int32> > Seg; // segment unit(segUnit) ==> (segment_cluster_label, <segment_start_frame, segment_end_frame>)
-//typedef std::vector< Seg > SegList; // vector of segment units (segUnit)
 
 #ifndef FRAMESHIFT
 #define FRAMESHIFT 0.01
@@ -25,67 +22,6 @@ namespace kaldi{
 #ifndef FRAMELENGTH
 #define FRAMELENGTH 0.025
 #endif
-
-class Segment {
-public:
-	Segment();
-	Segment(const int32 start, const int32 end);
-	Segment(const std::string label, const int32 start, const int32 end);
-	std::string Label(); // return cluster label
-	int32 StartIdx();  // return start frame index of segment
-	int32 EndIdx();	// return last frame index of segment
-	int32 Size(); // return the frame length of the segment
-	Vector<double> Ivector(); // return ith i-vector
-	void SetLabel(std::string label);
-	void SetIvector(Vector<double>);	
-
-private:
-	std::string label_;
-	int32 start_;
-	int32 end_;
-	Vector<double> ivector_;
-};
-
-// Segments are collection of segment, and the operations on those segments.
-class SegmentCollection {
-public:
-	SegmentCollection();
-	SegmentCollection(const std::string uttid);
-	SegmentCollection(const Vector<BaseFloat>& frame_labels, const std::string uttid);
-
-	int32 Size() const;
-	/*
-	Segment GetLastSegment();
-	Segment GetFirstSegment();
-	*/
-	std::string UttID();
-	//void ToLabels(Vector<BaseFloat>&);
-	void ToRTTM(const std::string& uttid, const std::string& rttmName);
-	Segment KthSegment(int32 k);
-	SegmentCollection GetSpeechSegments();
-	SegmentCollection GetLargeSegments(int32 min_seg_len);
-	void ExtractIvectors(const Matrix<BaseFloat>& feats,
-						 const Posterior& posterior,
-						 const IvectorExtractor& extractor);
-	void GetSegmentIvector(const Matrix<BaseFloat>& segFeats, 
-						   const Posterior& segPosterior, 
-						   const IvectorExtractor& extractor,
-						   Segment& seg);
-
-	void NormalizeIvectors();
-	void Append(Segment& seg);
-	void Read(const std::string& segments_rxfilename);
-	void Write(const std::string& segments_dirname);
-	/*
-	void ReadIvectors(const std::string& ivector_rxfilename); 
-	void WriteIvectors(const std::string& ivector_wxfilename); 
-	*/
-
-private:
-	std::vector<Segment> segment_list_;
-	std::string uttid_;
-	std::vector< Vector<double> > ivector_list_; 
-}; 
 
 
 template<class T>
@@ -279,6 +215,10 @@ void estimatePLDA(std::vector< Vector<double> > backgroundIvectors,
 				  Plda& plda);
 
 BaseFloat sigmoidRectifier(BaseFloat logLikelihoodRatio);
+
+
+BaseFloat SymetricKlDistance(const Vector<BaseFloat>& mean_vec_1, const Vector<BaseFloat>& mean_vec_2,
+								const Vector<BaseFloat>& cov_vec_1, const Vector<BaseFloat>& cov_vec_2);
 
 }
 #endif

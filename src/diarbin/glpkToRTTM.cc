@@ -7,6 +7,8 @@
 #include "base/kaldi-common.h"
 #include "diar/ilp.h"
 #include "diar/diar-utils.h"
+#include "diar/segment.h"
+
 
 
 int main(int argc, char *argv[]) {

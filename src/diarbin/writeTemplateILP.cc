@@ -6,6 +6,7 @@
 #include "base/kaldi-common.h"
 #include "ivector/ivector-extractor.h"
 #include "diar/diar-utils.h"
+#include "diar/segment.h"
 #include "gmm/am-diag-gmm.h"
 #include "hmm/posterior.h"
 #include "diar/ilp.h"

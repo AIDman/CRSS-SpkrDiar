@@ -10,6 +10,7 @@
 #include "gmm/am-diag-gmm.h"
 #include "hmm/posterior.h"
 #include "diar-utils.h"
+#include "segment.h"
 
 namespace kaldi{
 

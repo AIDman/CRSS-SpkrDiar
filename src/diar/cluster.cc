@@ -320,19 +320,7 @@ BaseFloat ClusterCollection::DistanceOfTwoClustersKL2(const Matrix<BaseFloat> &f
 	Vector<BaseFloat> mean_vec_2 = Cluster::ComputeMean(feats, cluster2);
 	Vector<BaseFloat> cov_vec_1 = Cluster::ComputeCovDiag(feats, cluster1);
 	Vector<BaseFloat> cov_vec_2 = Cluster::ComputeCovDiag(feats, cluster2);
-	Vector<BaseFloat> diff_mean(feats.NumCols());
-	diff_mean.AddVec(1.0, mean_vec_1);
-	diff_mean.AddVec(-1.0, mean_vec_2);
-	Vector<BaseFloat> inv_cov_1(cov_vec_1), inv_cov_2(cov_vec_2);
-	inv_cov_1.InvertElements();
-	inv_cov_2.InvertElements();
-
-	BaseFloat dist = 0.0;
-	for (size_t i = 0; i < feats.NumCols(); i++) {
-		dist += 0.5 * ((cov_vec_1(i) * inv_cov_2(i) + cov_vec_2(i) * inv_cov_1(i)) + diff_mean(i) * diff_mean(i) * (inv_cov_1(i) + inv_cov_2(i)));
-	}
-
-	return dist;	
+	return SymetricKlDistance(mean_vec_1, mean_vec_2, cov_vec_1, cov_vec_2);	
 }
 
 
