@@ -130,6 +130,39 @@ BaseFloat Cluster::LogDet(const Matrix<BaseFloat> &feats) const {
 }
 
 
+void Cluster::CollectFeatures(const Matrix<BaseFloat>& feats, const Cluster* clust, Matrix<BaseFloat>& feats_collect) {
+	int32 dim = feats.NumCols();
+	int32 nframes = clust->NumFrames();
+	feats_collect.Resize(nframes, dim);
+	std::vector<Segment> all_segments = clust->AllSegments();
+	int insert_pos = 0;
+	for(int32 i=0; i<all_segments.size(); i++) {
+		Segment seg = all_segments[i];
+		for(int32 idx = seg.StartIdx(); idx <= seg.EndIdx(); idx++) {
+			feats_collect.Row(insert_pos).CopyFromVec(feats.Row(idx));
+			insert_pos++;
+		}
+	}
+	return;
+}
+
+void Cluster::CollectPosteriors(const Posterior& posterior, const Cluster* clust, Posterior& posteriors_collect) {
+	int32 nframes = clust->NumFrames();
+	std::vector<Segment> all_segments = clust->AllSegments();
+	posteriors_collect.resize(nframes);
+	int32 insert_pos = 0;
+
+	for(int32 i=0; i<all_segments.size(); i++) {
+		Segment seg = all_segments[i];
+		for(int32 idx = seg.StartIdx(); idx <= seg.EndIdx(); idx++) {
+			posteriors_collect[insert_pos] = posterior[idx];
+			insert_pos++;
+		}
+	}
+	return;
+}
+
+
 ClusterCollection::ClusterCollection() {
 	num_clusters_ = 0;
 	head_cluster_ = NULL;
@@ -273,6 +306,10 @@ void ClusterCollection::FindMinDistClusters(const Matrix<BaseFloat> &feats, std:
 					dist = DistanceOfTwoClustersKL2(feats, p1, p2);
 					break;
 
+				//case IVECTOR_DISTANCE:
+				//	dist = DistanceOfTwoClustersIvectorKL2(feats, p1, p2);
+				//	break;
+
 				default:;
 				}
 
@@ -321,6 +358,27 @@ BaseFloat ClusterCollection::DistanceOfTwoClustersKL2(const Matrix<BaseFloat> &f
 	Vector<BaseFloat> cov_vec_1 = Cluster::ComputeCovDiag(feats, cluster1);
 	Vector<BaseFloat> cov_vec_2 = Cluster::ComputeCovDiag(feats, cluster2);
 	return SymetricKlDistance(mean_vec_1, mean_vec_2, cov_vec_1, cov_vec_2);	
+}
+
+
+BaseFloat ClusterCollection::DistanceOfTwoClustersIvectorKL2(const Matrix<BaseFloat> &feats, const Cluster* cluster1, const Cluster* cluster2,
+															const Posterior& posterior, const IvectorExtractor& extractor) {
+
+	Matrix<BaseFloat> feats_clust1, feats_clust2; 
+	Cluster::CollectFeatures(feats, cluster1, feats_clust1);	
+	Cluster::CollectFeatures(feats, cluster2, feats_clust2);
+
+	Posterior postprob_clust1, postprob_clust2;
+	Cluster::CollectPosteriors(posterior, cluster1, postprob_clust1);
+	Cluster::CollectPosteriors(posterior, cluster2, postprob_clust2);
+
+	Vector<double> ivector_clust1_mean, ivector_clust2_mean;
+	SpMatrix<double> ivector_clust1_covar, ivector_clust2_covar;
+	ComputeIvector(feats_clust1, postprob_clust1, extractor, ivector_clust1_mean, ivector_clust1_covar);
+	ComputeIvector(feats_clust1, postprob_clust2, extractor, ivector_clust2_mean, ivector_clust2_covar);
+
+	//return  SymetricKlDistance(ivector_clust1_mean, ivector_clust2_mean, ivector_clust1_covar, ivector_clust2_covar);
+	return  cosineDistance(ivector_clust1_mean, ivector_clust2_mean);
 }
 
 

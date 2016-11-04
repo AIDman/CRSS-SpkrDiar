@@ -220,5 +220,9 @@ BaseFloat sigmoidRectifier(BaseFloat logLikelihoodRatio);
 BaseFloat SymetricKlDistance(const Vector<BaseFloat>& mean_vec_1, const Vector<BaseFloat>& mean_vec_2,
 								const Vector<BaseFloat>& cov_vec_1, const Vector<BaseFloat>& cov_vec_2);
 
+
+void ComputeIvector(const Matrix<BaseFloat>& feats, const Posterior& posteriors, 
+					const IvectorExtractor& extractor, Vector<double>& ivector_mean, SpMatrix<double>& ivector_covar);
+
 }
 #endif

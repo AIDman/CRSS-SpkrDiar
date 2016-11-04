@@ -17,6 +17,7 @@ namespace kaldi{
 
 #define GLR_DISTANCE 0
 #define KL2_DISTANCE 1
+#define IVECTOR_DISTANCE 2
 
 class Cluster {
 public:
@@ -32,6 +33,9 @@ public:
 	static Vector<BaseFloat> ComputeCovDiag(const Matrix<BaseFloat>& feats, const Cluster* clust);
 	static Vector<BaseFloat> ComputeSum(const Matrix<BaseFloat>& feats, const Cluster* clust); 
 	static Vector<BaseFloat> ComputeVarSum(const Matrix<BaseFloat>& feats, const Cluster* clust);
+	static void CollectFeatures(const Matrix<BaseFloat>& feats, const Cluster* clust, Matrix<BaseFloat>& feats_collect);
+	static void CollectPosteriors(const Posterior& posterior, const Cluster* clust, Posterior& postprobs_collect);
+
 	Cluster* prev;
 	Cluster* next;
 
@@ -58,6 +62,8 @@ public:
 	static void MergeClusters(Cluster* clust1, Cluster* clust2);
 	BaseFloat DistanceOfTwoClustersGLR(const Matrix<BaseFloat> &feats, const Cluster* cluster1, const Cluster* cluster2);
 	BaseFloat DistanceOfTwoClustersKL2(const Matrix<BaseFloat> &feats, const Cluster* cluster1, const Cluster* cluster2); 
+	BaseFloat DistanceOfTwoClustersIvectorKL2(const Matrix<BaseFloat> &feats, const Cluster* cluster1, const Cluster* cluster2,
+															const Posterior& posterior, const IvectorExtractor& extractor);
 	void Write(const std::string& segment_dir);
 	void WriteToRttm(const std::string& rttm_outputdir);
 	Cluster* Head();

@@ -5,7 +5,6 @@
 #include <vector>
 #include <iomanip>
 #include "segment.h"
-#include "diar-utils.h"
 
 
 namespace kaldi {

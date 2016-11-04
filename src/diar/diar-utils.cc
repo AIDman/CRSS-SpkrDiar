@@ -223,6 +223,19 @@ BaseFloat SymetricKlDistance(const Vector<BaseFloat>& mean_vec_1, const Vector<B
 	return dist;	
 }
 
+
+void ComputeIvector(const Matrix<BaseFloat>& feats, const Posterior& posteriors, 
+					const IvectorExtractor& extractor, Vector<double>& ivector_mean, SpMatrix<double>& ivector_covar) {
+    bool need_2nd_order_stats = false;
+    IvectorExtractorUtteranceStats utt_stats(extractor.NumGauss(),
+                                             extractor.FeatDim(),
+                                             need_2nd_order_stats);
+    utt_stats.AccStats(feats, posteriors);
+    ivector_mean.Resize(extractor.IvectorDim());
+    ivector_mean(0) = extractor.PriorOffset();
+    extractor.GetIvectorDistribution(utt_stats, &ivector_mean, &ivector_covar);
+}
+
 }
 
 

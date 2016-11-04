@@ -57,6 +57,8 @@ int main(int argc, char *argv[]) {
                 segment_clusters.BottomUpClustering(feats, lambda, target_cluster_num, GLR_DISTANCE);
             }else if(dist_type == "KL2") {
                 segment_clusters.BottomUpClustering(feats, lambda, target_cluster_num, KL2_DISTANCE);
+            }else if(dist_type == "IV-KL2") {
+                segment_clusters.BottomUpClustering(feats, lambda, target_cluster_num, IVECTOR_DISTANCE);
             }
 
             segment_clusters.Write(segments_dirname);
