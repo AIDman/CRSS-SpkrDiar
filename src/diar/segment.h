@@ -52,9 +52,10 @@ public:
 	std::string UttID();
 	//void ToLabels(Vector<BaseFloat>&);
 	void ToRTTM(const std::string& uttid, const std::string& rttmName);
-	Segment KthSegment(int32 k);
+	Segment* KthSegment(int32 k);
 	SegmentCollection GetSpeechSegments();
 	SegmentCollection GetLargeSegments(int32 min_seg_len);
+	/*
 	void ExtractIvectors(const Matrix<BaseFloat>& feats,
 								 const Posterior& posterior,
 								 const IvectorExtractor& extractor);
@@ -64,7 +65,8 @@ public:
 						   Segment& seg);
 
 	void NormalizeIvectors();
-	void Append(Segment& seg);
+	*/
+	void Append(Segment* seg);
 	void Read(const std::string& segments_rxfilename);
 	void Write(const std::string& segments_dirname);
 	/*
@@ -73,7 +75,7 @@ public:
 	*/
 
 private:
-	std::vector<Segment> segment_list_;
+	std::vector<Segment*> segment_list_;
 	std::string uttid_;
 	std::vector< Vector<double> > ivector_list_; 
 }; 

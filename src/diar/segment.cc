@@ -116,18 +116,18 @@ SegmentCollection::SegmentCollection(const Vector<BaseFloat>& frame_labels, cons
 			}
 			if (prevState == -1) {
 				segmentStartEnd[1] = i-1;
-				Segment new_seg("overlap",segmentStartEnd[0],segmentStartEnd[1]);
+				Segment* new_seg = new Segment("overlap",segmentStartEnd[0],segmentStartEnd[1]);
 				this->segment_list_.push_back(new_seg);
 				segmentStartEnd[0] = i;
 			}else if (prevState == 0) {
 				segmentStartEnd[1] = i-1;
-				Segment new_seg("nonspeech",segmentStartEnd[0],segmentStartEnd[1]);
+				Segment* new_seg = new Segment("nonspeech",segmentStartEnd[0],segmentStartEnd[1]);
 				this->segment_list_.push_back(new_seg);
 				segmentStartEnd[0] = i;				
 			}else if (prevState > 0) {
 				std:: string stateStr = numberToString(prevState);
 				segmentStartEnd[1] = i-1;
-				Segment new_seg(stateStr,segmentStartEnd[0],segmentStartEnd[1]);
+				Segment* new_seg = new Segment(stateStr,segmentStartEnd[0],segmentStartEnd[1]);
 				this->segment_list_.push_back(new_seg);
 				segmentStartEnd[0] = i;
 			} 
@@ -183,9 +183,9 @@ void SegmentCollection::ToRTTM(const std::string& uttid, const std::string& rttm
 	std::ofstream fout;
 	fout.open(rttmName.c_str());
 	for (size_t i =0; i < this->segment_list_.size(); i++){
-		std::string spkrID = this->segment_list_[i].Label();
-		BaseFloat segStart = FrameIndexToSeconds(this->segment_list_[i].StartIdx());
-		BaseFloat segLength = FrameIndexToSeconds(this->segment_list_[i].EndIdx()) - segStart;
+		std::string spkrID = this->segment_list_[i]->Label();
+		BaseFloat segStart = FrameIndexToSeconds(this->segment_list_[i]->StartIdx());
+		BaseFloat segLength = FrameIndexToSeconds(this->segment_list_[i]->EndIdx()) - segStart;
 		fout << "SPEAKER ";
 		fout << uttid << " ";
 		fout << 1 << " ";
@@ -203,7 +203,7 @@ void SegmentCollection::ToRTTM(const std::string& uttid, const std::string& rttm
 SegmentCollection SegmentCollection::GetSpeechSegments() {
 	SegmentCollection speechSegments(this->uttid_);
 	for (size_t i = 0; i < this->segment_list_.size(); i++) {
-		if (this->segment_list_[i].Label() != "nonspeech" && this->segment_list_[i].Label() != "overlap") {
+		if (this->segment_list_[i]->Label() != "nonspeech" && this->segment_list_[i]->Label() != "overlap") {
 			speechSegments.Append(this->segment_list_[i]);
 		}
 	}
@@ -213,8 +213,8 @@ SegmentCollection SegmentCollection::GetSpeechSegments() {
 SegmentCollection SegmentCollection::GetLargeSegments(int32 min_seg_len) {
 	SegmentCollection largeSegments(uttid_);
 	for (size_t i = 0; i < this->segment_list_.size(); i++) {
-		Segment curr_seg = this->segment_list_[i];
-		int32 curr_seg_size = curr_seg.EndIdx() - curr_seg.StartIdx() + 1;
+		Segment* curr_seg = this->segment_list_[i];
+		int32 curr_seg_size = curr_seg->EndIdx() - curr_seg->StartIdx() + 1;
 		if (curr_seg_size >= min_seg_len) {
 			largeSegments.Append(this->segment_list_[i]);
 		}
@@ -223,22 +223,23 @@ SegmentCollection SegmentCollection::GetLargeSegments(int32 min_seg_len) {
 }
 
 
-Segment SegmentCollection::KthSegment(int32 k) {
+Segment* SegmentCollection::KthSegment(int32 k) {
 	return segment_list_[k];
 }
 
 
+/*
 void SegmentCollection::ExtractIvectors(const Matrix<BaseFloat>& feats,
 							   const Posterior& posterior,
 							   const IvectorExtractor& extractor) {
 	int32 dim = extractor.FeatDim();
-	size_t num_segs = this->segment_list_.size();
+	size_t num_segs = this->segment_list_->size();
 	for (size_t i=0; i < num_segs; i++){
-		std::string segment_label = this->segment_list_[i].Label();
-		Matrix<BaseFloat> seg_feats(this->segment_list_[i].EndIdx() - this->segment_list_[i].StartIdx() +1, dim);
-		seg_feats.CopyFromMat(feats.Range(this->segment_list_[i].StartIdx(), this->segment_list_[i].EndIdx() - this->segment_list_[i].StartIdx() + 1, 0, dim));
-		Posterior::const_iterator start_iter = posterior.begin() + this->segment_list_[i].StartIdx();
-		Posterior::const_iterator end_iter = posterior.begin() + this->segment_list_[i].EndIdx() + 1;
+		std::string segment_label = this->segment_list_[i]->Label();
+		Matrix<BaseFloat> seg_feats(this->segment_list_[i]->EndIdx() - this->segment_list_[i]->StartIdx() +1, dim);
+		seg_feats.CopyFromMat(feats.Range(this->segment_list_[i]->StartIdx(), this->segment_list_[i]->EndIdx() - this->segment_list_[i]->StartIdx() + 1, 0, dim));
+		Posterior::const_iterator start_iter = posterior.begin() + this->segment_list_[i]->StartIdx();
+		Posterior::const_iterator end_iter = posterior.begin() + this->segment_list_[i]->EndIdx() + 1;
 		Posterior seg_posterior(start_iter, end_iter);
 		GetSegmentIvector(seg_feats, seg_posterior, extractor, this->segment_list_[i]);
 	}
@@ -273,9 +274,9 @@ void SegmentCollection::NormalizeIvectors() {
 		this->ivector_list_[i].AddVec(-1, ivectorMean);
 	}
 }
+*/
 
-
-void SegmentCollection::Append(Segment& seg) {
+void SegmentCollection::Append(Segment* seg) {
 	this->segment_list_.push_back(seg);
 }
 
@@ -333,7 +334,7 @@ void SegmentCollection::Read(const std::string& segments_rxfilename) {
 		}
 
 		std::vector<int32> segStartEnd;
-		Segment seg(spkrLabel, SecondsToFrameIndex(BaseFloat(start)),SecondsToFrameIndex(BaseFloat(end)));
+		Segment* seg = new Segment(spkrLabel, SecondsToFrameIndex(BaseFloat(start)),SecondsToFrameIndex(BaseFloat(end)));
 		this->segment_list_.push_back(seg);
 	}	
 }
@@ -347,9 +348,9 @@ void SegmentCollection::Write(const std::string& segments_dirname) {
 	fout.open(segments_wxfilename.c_str());
 	fscp.open(segments_scpfilename.c_str(), std::ios::app);
 	for (size_t i =0; i < this->segment_list_.size(); i++){
-		std::string spkrLabel = this->segment_list_[i].Label();
-		BaseFloat segStart = FrameIndexToSeconds(this->segment_list_[i].StartIdx());
-		BaseFloat segEnd = FrameIndexToSeconds(this->segment_list_[i].EndIdx());
+		std::string spkrLabel = this->segment_list_[i]->Label();
+		BaseFloat segStart = FrameIndexToSeconds(this->segment_list_[i]->StartIdx());
+		BaseFloat segEnd = FrameIndexToSeconds(this->segment_list_[i]->EndIdx());
 		fout << this->uttid_ << " ";
 		fout << std::fixed << std::setprecision(3);
 		fout << segStart << " ";

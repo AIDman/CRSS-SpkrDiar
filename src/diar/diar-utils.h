@@ -51,6 +51,26 @@ SpMatrix<T> computeCovariance(const std::vector< Vector<T> >& vectorOfFeatures,
 
 
 template<class T>
+void ComputeCovariance(const std::vector< Vector<T> >& vectorOfFeatures, SpMatrix<T>& covariance) {
+	// Compute covariance (sparse matrix) of vector of features. 
+	size_t N = vectorOfFeatures.size(); 
+	int32 dim = vectorOfFeatures[0].Dim(); // doesn't matter which vectorOfFeatures[i] we use.
+
+	Vector<T> mean(dim);
+	computeMean(vectorOfFeatures, mean);
+
+	Matrix<T> matrixOfFeatures(N,dim);
+	for (size_t i = 0; i < N; i++) {
+		matrixOfFeatures.CopyRowFromVec(vectorOfFeatures[i], i);
+	}
+	matrixOfFeatures.AddVecToRows(-1., mean);		
+	covariance.Resize(dim);
+	covariance.AddMat2(1.0/N, matrixOfFeatures, kTrans, 1.0);
+	return;
+}
+
+
+template<class T>
 SpMatrix<T> computeWithinCovariance(const std::vector< Vector<T> >& vectorOfFeatures,
 									const std::vector<std::string>& vectorOfLabels) {
 	// Calculate: W  = (1/N) Sum_{s=1}_{S} Sum_{i=1}_{Ns} (w_i - m_s)((w_i - m_s)^T)

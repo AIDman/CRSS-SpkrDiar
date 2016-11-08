@@ -58,13 +58,13 @@ int main(int argc, char *argv[]) {
             largeSpeechSegments.ExtractIvectors(feature_reader.Value(largeSpeechSegments.UttID()), posterior_reader.Value(largeSpeechSegments.UttID()), extractor);
             largeSpeechSegments.NormalizeIvectors();
             for (size_t i = 0; i<largeSpeechSegments.Size(); i++) {
-                ivectorCollect.push_back(largeSpeechSegments.KthSegment(i).Ivector());
+                ivectorCollect.push_back(largeSpeechSegments.KthSegment(i)->Ivector());
             }
         } else{
             speechSegments.ExtractIvectors(feature_reader.Value(speechSegments.UttID()), posterior_reader.Value(speechSegments.UttID()), extractor);
             speechSegments.NormalizeIvectors();
             for (size_t i = 0; i<speechSegments.Size(); i++) {
-                ivectorCollect.push_back(speechSegments.KthSegment(i).Ivector());
+                ivectorCollect.push_back(speechSegments.KthSegment(i)->Ivector());
             }
         }
     }  

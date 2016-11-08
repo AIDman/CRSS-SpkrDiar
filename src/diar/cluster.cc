@@ -187,7 +187,7 @@ int32 ClusterCollection::NumFrames() {
 void ClusterCollection::InitFromNonLabeledSegments(SegmentCollection non_clustered_segments) {
 	 int32 num_segments = non_clustered_segments.Size();
 	 if(num_segments < 1) KALDI_ERR << "Clusters could not be initialized from empty segments";
-	 Cluster* head_cluster = new Cluster(non_clustered_segments.KthSegment(0));
+	 Cluster* head_cluster = new Cluster(*(non_clustered_segments.KthSegment(0)));
 	 Cluster* prev_cluster = NULL; 
 	 for(int32 i=0; i<num_segments;i++){
 	 	if(i==0) {
@@ -196,7 +196,7 @@ void ClusterCollection::InitFromNonLabeledSegments(SegmentCollection non_cluster
 	 		continue;
 	 	} 
 
-	 	Cluster* new_cluster = new Cluster(non_clustered_segments.KthSegment(i));
+	 	Cluster* new_cluster = new Cluster(*(non_clustered_segments.KthSegment(i)));
 	 	prev_cluster->next = new_cluster;
 	 	new_cluster->prev = prev_cluster;
 	 	prev_cluster = new_cluster;
