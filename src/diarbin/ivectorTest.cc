@@ -45,7 +45,7 @@ int main(int argc, char *argv[]) {
     for (; !label_reader.Done(); label_reader.Next()) {
         string uttid = label_reader.Key();
         SegmentCollection all_segments(label_reader.Value(), uttid);
-        SegmentCollection speech_segments = all_segments.GetSpeechSegments().GetLargeSegments(50);
+        SegmentCollection speech_segments = all_segments.GetSpeechSegments().GetLargeSegments(60);
         
         std::vector< Vector<double> > ivector_collect;
         // set ivector for each segment

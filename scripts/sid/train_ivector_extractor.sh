@@ -93,8 +93,9 @@ fi
 #parallel_opts="-pe smp $[$num_threads*$num_processes]"
 parallel_opts=""
 ## Set up features.
-feats="ark,s,cs:add-deltas $delta_opts scp:$sdata/JOB/feats.scp ark:- | apply-cmvn-sliding --norm-vars=false --center=true --cmn-window=300 ark:- ark:- | select-voiced-frames ark:- scp,s,cs:$sdata/JOB/vad.scp ark:- |"
+#feats="ark,s,cs:add-deltas $delta_opts scp:$sdata/JOB/feats.scp ark:- | apply-cmvn-sliding --norm-vars=false --center=true --cmn-window=300 ark:- ark:- | select-voiced-frames ark:- scp,s,cs:$sdata/JOB/vad.scp ark:- |"
 #feats="ark,s,cs:add-deltas $delta_opts scp:$sdata/JOB/feats.scp ark:- | apply-cmvn-sliding --norm-vars=false --center=true --cmn-window=300 ark:- ark:- |"
+feats="ark,s,cs:copy-feats scp:$data/feats.scp ark:- | apply-cmvn --norm-vars=true scp:$data/cmvn.scp ark:- ark:- | add-deltas $delta_opts scp:$data/feats.scp ark:- | select-voiced-frames ark:- scp,s,cs:$data/vad.scp ark:- |"
 
 # Initialize the i-vector extractor using the FGMM input
 if [ $stage -le -2 ]; then
@@ -170,4 +171,5 @@ while [ $x -lt $num_iters ]; do
   x=$[$x+1]
 done
 
+rm -f $dir/final.ie
 ln -s $x.ie $dir/final.ie

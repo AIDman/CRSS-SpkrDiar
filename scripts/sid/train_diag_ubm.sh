@@ -91,8 +91,9 @@ echo $delta_opts > $dir/delta_opts
 
 # Note: there is no point subsampling all_feats, because gmm-global-init-from-feats
 # effectively does subsampling itself (it keeps a random subset of the features).
-all_feats="ark,s,cs:add-deltas $delta_opts scp:$data/feats.scp ark:- | apply-cmvn-sliding --norm-vars=false --center=true --cmn-window=300 ark:- ark:- | select-voiced-frames ark:- scp,s,cs:$data/vad.scp ark:- |"
-feats="ark,s,cs:add-deltas $delta_opts scp:$sdata/JOB/feats.scp ark:- | apply-cmvn-sliding --norm-vars=false --center=true --cmn-window=300 ark:- ark:- | select-voiced-frames ark:- scp,s,cs:$sdata/JOB/vad.scp ark:- | subsample-feats --n=$subsample ark:- ark:- |"
+#all_feats="ark,s,cs:add-deltas $delta_opts scp:$data/feats.scp ark:- | apply-cmvn-sliding --norm-vars=false --center=true --cmn-window=300 ark:- ark:- | select-voiced-frames ark:- scp,s,cs:$data/vad.scp ark:- |"
+#feats="ark,s,cs:add-deltas $delta_opts scp:$sdata/JOB/feats.scp ark:- | apply-cmvn-sliding --norm-vars=false --center=true --cmn-window=300 ark:- ark:- | select-voiced-frames ark:- scp,s,cs:$sdata/JOB/vad.scp ark:- | subsample-feats --n=$subsample ark:- ark:- |"
+all_feats="ark,s,cs:copy-feats scp:$data/feats.scp ark:- | apply-cmvn --norm-vars=true scp:$data/cmvn.scp ark:- ark:- | add-deltas $delta_opts scp:$data/feats.scp ark:- | select-voiced-frames ark:- scp,s,cs:$data/vad.scp ark:- |"
 
 num_gauss_init=$(perl -e "print int($initial_gauss_proportion * $num_gauss); ");
 ! [ $num_gauss_init -gt 0 ] && echo "Invalid num-gauss-init $num_gauss_init" && exit 1;
@@ -114,7 +115,7 @@ fi
 if [ $stage -le -1 ]; then
   echo Getting Gaussian-selection info
   $cmd JOB=1:$nj $dir/log/gselect.JOB.log \
-    gmm-gselect --n=$num_gselect $dir/0.dubm "$feats" \
+    gmm-gselect --n=$num_gselect $dir/0.dubm "$all_feats" \
       "ark:|gzip -c >$dir/gselect.JOB.gz" || exit 1;
 fi
 
@@ -127,7 +128,7 @@ for x in `seq 0 $[$num_iters-1]`; do
   # Accumulate stats.
     $cmd JOB=1:$nj $dir/log/acc.$x.JOB.log \
       gmm-global-acc-stats "--gselect=ark,s,cs:gunzip -c $dir/gselect.JOB.gz|" \
-      $dir/$x.dubm "$feats" $dir/$x.JOB.acc || exit 1;
+      $dir/$x.dubm "$all_feats" $dir/$x.JOB.acc || exit 1;
     if [ $x -lt $[$num_iters-1] ]; then # Don't remove low-count Gaussians till last iter,
       opt="--remove-low-count-gaussians=false" # or gselect info won't be valid any more.
     else

@@ -17,21 +17,21 @@ log_end(){
 
 set -e # exit on error
 
-data="is_sessions_file_31" # data for diarization
+data="is_sessions_file_1" # data for diarization
 data_dev="is_sessions"  # dev_data is for UBM, TV matrix training for i-vector
 
 run_mfcc(){
     log_start "Extract MFCC features"
 
     mfccdir=mfcc
-    for x in $data $data_dev; do
+    for x in $data; do
       steps/make_mfcc.sh --cmd "$train_cmd" --nj 1 data/$x exp/make_mfcc/$x $mfccdir || exit 1;
       steps/compute_cmvn_stats.sh data/$x exp/make_mfcc/$x $mfccdir || exit 1;
     done
 
     log_end "Extract MFCC features"
 }
-#run_mfcc 
+run_mfcc 
 
 
 run_vad(){
