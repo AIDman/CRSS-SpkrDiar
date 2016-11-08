@@ -57,7 +57,11 @@ public:
 	void InitFromNonLabeledSegments(SegmentCollection non_clustered_segmemts);
 	//InitFromLabeledSegments(SegmentCollection);
 	void BottomUpClustering(const Matrix<BaseFloat> &feats, const BaseFloat& lambda = 5.0, int32 target_cluster_num = 0, const int32& dist_type = 0);
+	void BottomUpClusteringIvector(const Matrix<BaseFloat> &feats, const Posterior& posterior, const IvectorExtractor& extractor, const BaseFloat& lambda = 5.0, int32 target_cluster_num = 0, const int32& dist_type = 0);
 	void FindMinDistClusters(const Matrix<BaseFloat> &feats, std::vector<std::vector<BaseFloat> >& dist_matrix, 
+		std::vector<bool>& to_be_updated, std::unordered_map<Cluster*, int32>& cluster_idx_map, std::vector<Cluster*> &min_dist_clusters);
+	void FindMinDistClustersIvector(const Matrix<BaseFloat> &feats, const Posterior& posterior, const IvectorExtractor& extractor, 
+		std::vector<std::vector<BaseFloat> >& dist_matrix, 
 		std::vector<bool>& to_be_updated, std::unordered_map<Cluster*, int32>& cluster_idx_map, std::vector<Cluster*> &min_dist_clusters);
 	static void MergeClusters(Cluster* clust1, Cluster* clust2);
 	BaseFloat DistanceOfTwoClustersGLR(const Matrix<BaseFloat> &feats, const Cluster* cluster1, const Cluster* cluster2);

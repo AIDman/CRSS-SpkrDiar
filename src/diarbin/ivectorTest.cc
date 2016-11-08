@@ -5,9 +5,10 @@
 #include "base/kaldi-common.h"
 #include "ivector/ivector-extractor.h"
 #include "diar/ilp.h"
-#include "diar/diar-utils.h"
 #include "gmm/am-diag-gmm.h"
 #include "hmm/posterior.h"
+#include "diar/diar-utils.h"
+#include "diar/segment.h"
 
 
 int main(int argc, char *argv[]) {
@@ -19,7 +20,7 @@ int main(int argc, char *argv[]) {
     kaldi::ParseOptions po(usage);
 	po.Read(argc, argv);
 
-	if (po.NumArgs() != 6) {
+	if (po.NumArgs() != 4) {
         po.PrintUsage();
         exit(1);
     }
@@ -27,103 +28,75 @@ int main(int argc, char *argv[]) {
     std::string label_rspecifier = po.GetArg(1),
                 feature_rspecifier = po.GetArg(2),
                 posterior_rspecifier = po.GetArg(3),
-                ivector_extractor_rxfilename = po.GetArg(4),
-                background_ivectors_rspecifier = po.GetArg(5),
-                utt2spk_rspecifier = po.GetArg(6);
+                ivector_extractor_rxfilename = po.GetArg(4);
 
     SequentialBaseFloatVectorReader label_reader(label_rspecifier);
     SequentialBaseFloatMatrixReader feature_reader(feature_rspecifier);
     RandomAccessPosteriorReader posterior_reader(posterior_rspecifier);
-    SequentialDoubleVectorReader ivector_reader(background_ivectors_rspecifier);
     IvectorExtractor extractor;
     ReadKaldiObject(ivector_extractor_rxfilename, &extractor);
 
-    // read Background i-vectors:
-    SequentialTokenReader utt2spk_reader(utt2spk_rspecifier);
-    std::map<std::string, std::string> utt2spk_map;
-    for (; !utt2spk_reader.Done(); utt2spk_reader.Next()) {
-        std::string utt = utt2spk_reader.Key();
-        std::string spk = utt2spk_reader.Value();
-        utt2spk_map[utt] = spk;
-    }
-
-    std::vector< Vector<double> > backgroundIvectors;
-    std::vector<std::string> backgroundLabels;
-    for (; !ivector_reader.Done(); ivector_reader.Next()) {
-         std::string utt_label = ivector_reader.Key();
-         Vector<double> utt_ivector = ivector_reader.Value();
-         backgroundIvectors.push_back(utt_ivector); 
-         backgroundLabels.push_back(utt2spk_map[utt_label]); 
-    }
-
-    SpMatrix<double> withinCovariance = computeWithinCovariance(backgroundIvectors,
-                                                                backgroundLabels);
-
-    Plda plda;
-    estimatePLDA(backgroundIvectors, backgroundLabels, plda);
-
-    BaseFloat TrueScore=0.0;
-    int32 TureCount=0;
-    BaseFloat FalseScore=0.0;
-    int32 FalseCount=0;
-    size_t loopMax = 50;
+    BaseFloat true_score=0.0;
+    int32 true_count=0;
+    BaseFloat false_score=0.0;
+    int32 false_count=0;
+    size_t loop_max = 50;
 
     for (; !label_reader.Done(); label_reader.Next()) {
-        Segments allSegments(label_reader.Value(), label_reader.Key());
-        Segments speechSegments = allSegments.GetSpeechSegments();
-        speechSegments.ExtractIvectors(feature_reader.Value(),
-                                        posterior_reader.Value(label_reader.Key()),
-                                        extractor);
-        speechSegments.NormalizeIvectors();
-
-        std::vector< Vector<double> > ivectorCollect;
-        // read in segments from each file
-        for (size_t i = 0; i<speechSegments.Size(); i++) {
-            ivectorCollect.push_back(speechSegments.GetIvector(i));
+        string uttid = label_reader.Key();
+        SegmentCollection all_segments(label_reader.Value(), uttid);
+        SegmentCollection speech_segments = all_segments.GetSpeechSegments().GetLargeSegments(0);
+        
+        std::vector< Vector<double> > ivector_collect;
+        // set ivector for each segment
+        for (size_t k = 0; k<speech_segments.Size(); k++) {
+            Segment kth_segment = speech_segments.KthSegment(k);
+            kth_segment.SetIvector(feature_reader.Value(), 
+                                    posterior_reader.Value(uttid), 
+                                    extractor);
+            ivector_collect.push_back(kth_segment.Ivector());
         }
-        Vector<double> totalMean;
-        computeMean(ivectorCollect, totalMean);
-        SpMatrix<double> totalCov = computeCovariance(ivectorCollect, 
-                                                        totalMean);
 
-        for (size_t i=0; i<loopMax;i++){
-            for (size_t j=0; j<loopMax;j++){
-                std::string jLabel = speechSegments.SegKey(j);
-                std::string iLabel = speechSegments.SegKey(i);
-                if (i != j && (iLabel == jLabel) && iLabel != "nonspeech" &&
-                    iLabel != "overlap" && jLabel != "nonspeech" && jLabel != "overlap") {
-                    const Vector<double> &iIvector = speechSegments.GetIvector(i);
-                    const Vector<double> &jIvector = speechSegments.GetIvector(j);
-                    BaseFloat dotProduct = 1 - cosineDistance(iIvector, jIvector);
-                    //TrueScore += dotProduct; TureCount++;
-                    //BaseFloat distance = mahalanobisDistance(iIvector, jIvector, totalCov);
-                    // BaseFloat distance = conditionalBayesDistance(iIvector, jIvector, 
-                    //                                               withinCovariance);
-                    BaseFloat x = pldaScoring(iIvector,jIvector,plda);
-                    BaseFloat distance = sigmoidRectifier(x);
-                    KALDI_LOG << "TRUE Mahalanobis scores: " << distance;
-                    KALDI_LOG << "TRUE Cosine scores: " << dotProduct;
+        // compute mean of ivectors
+        Vector<double> total_mean;
+        computeMean(ivector_collect, total_mean);
+ 
+        // cross comparison 
+        for (size_t i=0; i<loop_max;i++){
+            Segment ith_segment = speech_segments.KthSegment(i);
+            Vector<double> i_ivector = ith_segment.Ivector();
+            i_ivector.AddVec(-1, total_mean); // normalize
+
+            for (size_t j=0; j<loop_max;j++){
+                Segment jth_segment = speech_segments.KthSegment(j); 
+                Vector<double> j_ivector = jth_segment.Ivector();
+                j_ivector.AddVec(-1, total_mean); // normalize
+
+                std::string i_label = ith_segment.Label();
+                std::string j_label = jth_segment.Label();
+
+                if (i != j && (i_label == j_label) && i_label != "nonspeech" &&
+                         i_label != "overlap" && j_label != "nonspeech" && j_label != "overlap") {
+                    BaseFloat dot_product = 1 - cosineDistance(i_ivector, j_ivector);
+                    //BaseFloat distance = mahalanobisDistance(i_ivector, j_ivector, total_cov);
+                    true_score += dot_product; true_count++;
+                    //KALDI_LOG << "TRUE Mahalanobis scores: " << distance;
+                    KALDI_LOG << "TRUE Cosine scores: " << dot_product;
                 }
-                if (i != j && iLabel != jLabel && iLabel != "nonspeech" &&
-                    iLabel != "overlap" && jLabel != "nonspeech" && jLabel != "overlap") {
-                    const Vector<double> &iIvector = speechSegments.GetIvector(i);
-                    const Vector<double> &jIvector = speechSegments.GetIvector(j);
-                    BaseFloat dotProduct =  1 - cosineDistance(iIvector, jIvector);
-                    //FalseScore += dotProduct; FalseCount++;
-                    ///BaseFloat distance = mahalanobisDistance(iIvector, jIvector, totalCov);
-                    // BaseFloat distance = conditionalBayesDistance(iIvector, jIvector, 
-                    //                                                withinCovariance);
-                    BaseFloat x = pldaScoring(iIvector,jIvector,plda);
-                    BaseFloat distance = sigmoidRectifier(x);
-                    KALDI_LOG << "FALSE Mahalanobis scores: " << distance;
-                    KALDI_LOG << "FALSE Cosine scores: " << dotProduct;
+                if (i != j && i_label != j_label && i_label != "nonspeech" &&
+                        i_label != "overlap" && j_label != "nonspeech" && j_label != "overlap") {
+                    BaseFloat dot_product =  1 - cosineDistance(i_ivector, j_ivector);
+                    //BaseFloat distance = mahalanobisDistance(i_ivector, j_ivector, total_cov);
+                    false_score += dot_product; false_count++;
+                    //KALDI_LOG << "FALSE Mahalanobis scores: " << distance;
+                    KALDI_LOG << "FALSE Cosine scores: " << dot_product;
                 }
             }
         }
         //feature_reader.Next();
     }
-    KALDI_LOG << "Total Sum Of TRUE Target Score: " << TrueScore/TureCount;
-    KALDI_LOG << "Total Sum Of False Detection Score: " << FalseScore/FalseCount;
-    KALDI_LOG << "Count of TRUE Target: " << TureCount;
-    KALDI_LOG << "Count Of FALSE Target: " << FalseCount;
+    KALDI_LOG << "Total Sum Of TRUE Target Score: " << true_score/true_count;
+    KALDI_LOG << "Total Sum Of False Detection Score: " << false_score/false_count;
+    KALDI_LOG << "Count of TRUE Target: " << true_count;
+    KALDI_LOG << "Count Of FALSE Target: " << false_count;
 }

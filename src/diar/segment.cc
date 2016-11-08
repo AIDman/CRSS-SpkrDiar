@@ -44,9 +44,41 @@ void Segment::SetLabel(std::string label) {
 	this->label_ = label;
 }
 
-void Segment::SetIvector(Vector<double> ivec) {
+void Segment::SetIvector(Vector<double>& ivec) {
 	this->ivector_ = ivec;
 }
+
+
+void Segment::SetIvector(const Matrix<BaseFloat>& feats, 
+						   const Posterior& posterior, 
+						   const IvectorExtractor& extractor) {
+	// post probs of segment
+ 	Posterior::const_iterator start_iter = posterior.begin() + this->start_;
+	Posterior::const_iterator end_iter = posterior.begin() + this->end_ + 1;
+	Posterior seg_posterior(start_iter, end_iter);
+
+	// feature of segment
+	int32 dim = feats.NumCols();
+	int32 nframes = this->end_ - this->start_ + 1;
+	Matrix<BaseFloat> seg_feats(nframes, dim);
+	int insert_pos = 0;
+	for(int32 idx = this->start_; idx <= this->end_; idx++) {
+		seg_feats.Row(insert_pos).CopyFromVec(feats.Row(idx));
+		insert_pos++;
+	}
+
+	// ivector extraction
+    bool need_2nd_order_stats = false;
+    IvectorExtractorUtteranceStats utt_stats(extractor.NumGauss(),
+                                             extractor.FeatDim(),
+                                             need_2nd_order_stats);
+    utt_stats.AccStats(seg_feats, seg_posterior);
+    this->ivector_.Resize(extractor.IvectorDim());
+    this->ivector_(0) = extractor.PriorOffset();
+    extractor.GetIvectorDistribution(utt_stats, &ivector_, NULL);
+    return;
+}
+
 
 Vector<double> Segment::Ivector() {
 	return this->ivector_;
@@ -199,20 +231,18 @@ Segment SegmentCollection::KthSegment(int32 k) {
 void SegmentCollection::ExtractIvectors(const Matrix<BaseFloat>& feats,
 							   const Posterior& posterior,
 							   const IvectorExtractor& extractor) {
-	int32 featsDim = extractor.FeatDim();
-	size_t numSegs = this->segment_list_.size();
-	for (size_t i=0; i < numSegs; i++){
-		std::string segmentLabel = this->segment_list_[i].Label();
-		Matrix<BaseFloat> segFeats(this->segment_list_[i].EndIdx() - this->segment_list_[i].StartIdx() +1, featsDim);
-		segFeats.CopyFromMat(feats.Range(this->segment_list_[i].StartIdx(), this->segment_list_[i].EndIdx() - this->segment_list_[i].StartIdx() + 1, 0, featsDim));
-
-		Posterior::const_iterator startIter = posterior.begin() + this->segment_list_[i].StartIdx();
-		Posterior::const_iterator endIter = posterior.begin() + this->segment_list_[i].EndIdx() + 1;
-		Posterior segPosterior(startIter, endIter);
-		
-		//KALDI_LOG << " Segment Range : segmentStartEnd[0]" << " <-> " << segmentStartEnd[1] << " The seg size is: " << segPosterior.size();
-		GetSegmentIvector(segFeats, segPosterior, extractor, this->segment_list_[i]);
+	int32 dim = extractor.FeatDim();
+	size_t num_segs = this->segment_list_.size();
+	for (size_t i=0; i < num_segs; i++){
+		std::string segment_label = this->segment_list_[i].Label();
+		Matrix<BaseFloat> seg_feats(this->segment_list_[i].EndIdx() - this->segment_list_[i].StartIdx() +1, dim);
+		seg_feats.CopyFromMat(feats.Range(this->segment_list_[i].StartIdx(), this->segment_list_[i].EndIdx() - this->segment_list_[i].StartIdx() + 1, 0, dim));
+		Posterior::const_iterator start_iter = posterior.begin() + this->segment_list_[i].StartIdx();
+		Posterior::const_iterator end_iter = posterior.begin() + this->segment_list_[i].EndIdx() + 1;
+		Posterior seg_posterior(start_iter, end_iter);
+		GetSegmentIvector(seg_feats, seg_posterior, extractor, this->segment_list_[i]);
 	}
+	return;
 }
 
 
@@ -230,6 +260,7 @@ void SegmentCollection::GetSegmentIvector(const Matrix<BaseFloat>& segFeats,
     extractor.GetIvectorDistribution(utt_stats, &ivector, NULL);
     seg.SetIvector(ivector);
     ivector_list_.push_back(ivector);
+    return;
 }
 
 

@@ -83,8 +83,9 @@ if [ $stage -le 0 ]; then
     fgmm-global-gselect-to-post --min-post=$min_post $srcdir/final.ubm "$feats" \
 	ark,s,cs:- ark:- \| scale-post ark:- $posterior_scale ark,t:$dir/posterior.JOB || exit 1;
 
+    #ivectorTest ark:$dir/tmp/labels.ark "$feats" ark,s,cs:$dir/posterior.JOB $srcdir/final.ie scp:exp/dev.iv/ivector.scp ark:data/dev/utt2spk || exit 1;
   $cmd JOB=1:$nj $dir/log/ivector_score.JOB.log \
-    ivectorTest ark:$dir/tmp/labels.ark "$feats" ark,s,cs:$dir/posterior.JOB $srcdir/final.ie scp:exp/dev.iv/ivector.scp ark:data/dev/utt2spk || exit 1;
+	ivectorTest ark:$dir/tmp/labels.ark "$feats" ark,s,cs:$dir/posterior.JOB $srcdir/final.ie || exit 1;
 
 fi
 

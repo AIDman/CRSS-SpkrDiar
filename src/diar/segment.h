@@ -29,7 +29,10 @@ public:
 	int32 Size(); // return the frame length of the segment
 	Vector<double> Ivector(); // return ith i-vector
 	void SetLabel(std::string label);
-	void SetIvector(Vector<double>);	
+	void SetIvector(Vector<double>& ivec);	
+	void SetIvector(const Matrix<BaseFloat>& feats, 
+						   const Posterior& posteriors, 
+						   const IvectorExtractor& extractor);	
 
 private:
 	std::string label_;
@@ -46,10 +49,6 @@ public:
 	SegmentCollection(const Vector<BaseFloat>& frame_labels, const std::string uttid);
 
 	int32 Size() const;
-	/*
-	Segment GetLastSegment();
-	Segment GetFirstSegment();
-	*/
 	std::string UttID();
 	//void ToLabels(Vector<BaseFloat>&);
 	void ToRTTM(const std::string& uttid, const std::string& rttmName);
@@ -57,8 +56,8 @@ public:
 	SegmentCollection GetSpeechSegments();
 	SegmentCollection GetLargeSegments(int32 min_seg_len);
 	void ExtractIvectors(const Matrix<BaseFloat>& feats,
-						 const Posterior& posterior,
-						 const IvectorExtractor& extractor);
+								 const Posterior& posterior,
+								 const IvectorExtractor& extractor);
 	void GetSegmentIvector(const Matrix<BaseFloat>& segFeats, 
 						   const Posterior& segPosterior, 
 						   const IvectorExtractor& extractor,
