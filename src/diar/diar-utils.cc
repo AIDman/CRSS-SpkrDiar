@@ -457,7 +457,7 @@ BaseFloat cosineDistance(const Vector<double>& v1, const Vector<double>& v2) {
 BaseFloat conditionalBayesDistance(const Vector<double>& v1, const Vector<double>& v2, 
 									const SpMatrix<double>& withinCov) {
 	// Distance matrix suggested by Rouvier and Meignier (Odyssey 12). 
-	// This measure is computes a mahalanobis distance while assuming 
+	// This measure computes a mahalanobis distance while assuming 
 	// a similar within-class covariance for all speakers in development data. 
 	// Different from regular mahalanobis distance in the covariance. 
 	return mahalanobisDistance(v1, v2, withinCov);
