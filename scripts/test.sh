@@ -58,7 +58,7 @@ run_vad(){
     python local/generate_nonspeech_labels.py data/$datadir/vad.scp
  
 }
-run_vad $data
+#run_vad $data
 
 
 
@@ -103,8 +103,8 @@ run_gmmsad() {
 make_ref(){
     log_start "Generate Reference Segments/Labels/RTTM files"
 
-    ami_annotated_segment=/home/chengzhu/work/SpeechCorpus/ami_dir/segments
-    #ami_annotated_segment=/home/nxs113020/Downloads/ami_dir/segments
+    #ami_annotated_segment=/home/chengzhu/work/SpeechCorpus/ami_dir/segments
+    ami_annotated_segment=/home/nxs113020/Downloads/ami_dir/segments
 
     x=$1
     local/make_ami_ref.sh data/$x $ami_annotated_segment exp/ref/$x
@@ -208,18 +208,18 @@ run_diarization(){
         make_ref ${datadir}_file_${fileidx}
         long=0 #$(too_long ${datadir}_file_${fileidx})
         if [ $long -eq 0 ]; then
-            #run_changedetection ${datadir}_file_${fileidx}
-            test_ivectors ${datadir}_file_${fileidx}
-            #run_glpkIlpTemplate ${datadir}_file_${fileidx}
-            #run_glpk_Ilp ${datadir}_file_${fileidx}
-            #run_DER ${datadir}_file_${fileidx}
+            run_changedetection ${datadir}_file_${fileidx}
+            #test_ivectors ${datadir}_file_${fileidx}
+            run_glpkIlpTemplate ${datadir}_file_${fileidx}
+            run_glpk_Ilp ${datadir}_file_${fileidx}
+            run_DER ${datadir}_file_${fileidx}
         fi
         fileidx=$[$fileidx+1]
     done
     
-    #grep "OVERALL SPEAKER DIARIZATION ERROR" exp/result_DER/${datadir}_file_*/diar_err
-    #grep "OVERALL SPEAKER DIARIZATION ERROR" exp/result_DER/${datadir}_file_*/diar_err* | awk '{print $1 " " $7}' | sed 'N;s/\n/ /' | tee result
-    #awk '{print $1 " " $2 " " $4}' result 	 
+    grep "OVERALL SPEAKER DIARIZATION ERROR" exp/result_DER/${datadir}_file_*/diar_err
+    grep "OVERALL SPEAKER DIARIZATION ERROR" exp/result_DER/${datadir}_file_*/diar_err* | awk '{print $1 " " $7}' | sed 'N;s/\n/ /' | tee result
+    awk '{print $1 " " $2 " " $4}' result 	 
 }
 run_diarization $data
 

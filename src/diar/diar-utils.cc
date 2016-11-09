@@ -411,14 +411,14 @@ void computeDistanceMatrix(const std::vector< Vector<double> >& vectorList,
 			if (i == j){
 				distanceMatrix(i,j) = 0;
 			}else{
-				// distanceMatrix(i,j) = mahalanobisDistance(vectorList[i], 
-				// 										  vectorList[j], 
-				// 										  vectorCovariance);
+				distanceMatrix(i,j) = mahalanobisDistance(vectorList[i], 
+														  vectorList[j], 
+														  vectorCovariance);
 				// distanceMatrix(i,j) = conditionalBayesDistance(vectorList[i], 
 				// 										 	   vectorList[j], 
 				// 											   withinCovariance);
 				// distanceMatrix(i,j) = 1 - cosineDistance(vectorList[i],vectorList[j]);
-				distanceMatrix(i,j) = pldaScoring(vectorList[i],vectorList[j],plda);
+				//distanceMatrix(i,j) = pldaScoring(vectorList[i],vectorList[j],plda);
 			}
 		}
 	}
@@ -441,7 +441,7 @@ BaseFloat mahalanobisDistance(const Vector<double>& v1, const Vector<double>& v2
 	Vector<double> S_iv1(iv1.Dim());
 	S_iv1.SetZero();
 	S_iv1.AddSpVec(1.0, Sigma, iv1, 0.0);
-	return sqrt(VecVec(iv1, iv1));
+	return sqrt(VecVec(S_iv1, S_iv1));
 }
 
 
