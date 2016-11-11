@@ -7,7 +7,7 @@ namespace kaldi {
 
 Cluster::Cluster(Segment one_segment){
 	this->label_ = Cluster::prefix + ToString(Cluster::id_generator++);
-	this->list_.push_back(one_segment);
+	this->all_segments_.push_back(one_segment);
 	this->frames_ =  one_segment.Size();
 }
 
@@ -15,18 +15,18 @@ int Cluster::id_generator = 1;
 std::string Cluster::prefix = "C";
 
 void Cluster::AddSegment(Segment new_segment) {
-	this->list_.push_back(new_segment);
+	this->all_segments_.push_back(new_segment);
 	this->frames_ = this->frames_ + new_segment.Size();
 }
 
 
 std::vector<Segment> Cluster::AllSegments() const {
-	return this->list_;
+	return this->all_segments_;
 }
 
 
 Segment Cluster::KthSegment(int32 k) const {
-	return this->list_[k];
+	return this->all_segments_[k];
 }
 
 
@@ -40,87 +40,107 @@ int32 Cluster::NumFrames() const {
 }
 
 
-int32 Cluster::NumSegments() const {
-	return this->list_.size();
+int32 Cluster::NumFramesAfterMask() const {
+	int32 nf = 0;
+	for(int32 i = 0; i<this->all_segments_.size(); i++) {
+		Segment seg = all_segments_[i];
+		Vector<BaseFloat> mask = seg.Mask();
+		for(int32 j = 0; j<mask.Dim(); j++) {
+			if (mask(j) == 1.0) nf++;
+		}
+
+	}
+	return nf;
 }
 
 
-Vector<BaseFloat> Cluster::ComputeMean(const Matrix<BaseFloat>& feats, const Cluster* clust) {
-	std::vector<Segment> all_segments = clust->AllSegments();
-	int32 dim = feats.NumCols();
-	Vector<BaseFloat> mean_vec(dim);
+int32 Cluster::NumSegments() const {
+	return this->all_segments_.size();
+}
+
+
+void Cluster::ComputeMean(const Matrix<BaseFloat>& feats, Vector<BaseFloat>& mean_vec) const {
 	int32 tot_frames = 0;
-	for(int i=0; i<all_segments.size();i++) {
-		Segment seg = all_segments[i];
-		for(int j = seg.StartIdx(); j<=seg.EndIdx(); j++) {
-			mean_vec.AddVec(1.0, feats.Row(j));
-			tot_frames++;
+	for(int32 i=0; i<this->all_segments_.size();i++) {
+		Segment seg = this->all_segments_[i];
+		Vector<BaseFloat> mask = seg.Mask();
+		for(int32 j = seg.StartIdx(), k = 0; j<=seg.EndIdx(); j++, k++) {
+			if(mask(k) == 1.0) {
+				mean_vec.AddVec(1.0, feats.Row(j));
+				tot_frames++;
+			}
 		}
 	}
 	mean_vec.Scale(1.0/tot_frames);
-	return mean_vec;
+	return;
 }
 
 
-Vector<BaseFloat> Cluster::ComputeCovDiag(const Matrix<BaseFloat>& feats, const Cluster* clust) {
-	std::vector<Segment> all_segments = clust->AllSegments();
+void Cluster::ComputeCovDiag(const Matrix<BaseFloat>& feats, Vector<BaseFloat>& cov_vec) const {
 	int32 dim = feats.NumCols();
-	Vector<BaseFloat> cov_vec(dim);
 	int32 tot_frames = 0;
-	for(int i=0; i<all_segments.size();i++) {
-		Segment seg = all_segments[i];
-		for(int j = seg.StartIdx(); j<=seg.EndIdx(); j++) {
-			cov_vec.AddVec2(1.0, feats.Row(j));
-			tot_frames++;
+	for(int32 i=0; i<this->all_segments_.size();i++) {
+		Segment seg = this->all_segments_[i];
+		Vector<BaseFloat> mask = seg.Mask();
+		for(int32 j = seg.StartIdx(), k = 0; j<=seg.EndIdx(); j++, k++) {
+			if(mask(k) == 1.0) {
+				cov_vec.AddVec2(1.0, feats.Row(j));
+				tot_frames++;
+			}
 		}
 	}
 	cov_vec.Scale(1.0/tot_frames);
 
-	Vector<BaseFloat> mean_vec = Cluster::ComputeMean(feats, clust);
-	cov_vec.AddVec2(-1.0, mean_vec);
-	return cov_vec;
-}
-
-
-// To Repeat the GLR code in Audioseg
-Vector<BaseFloat> Cluster::ComputeSum(const Matrix<BaseFloat>& feats, const Cluster* clust) {
-	std::vector<Segment> all_segments = clust->AllSegments();
-	int32 dim = feats.NumCols();
 	Vector<BaseFloat> mean_vec(dim);
-	int32 tot_frames = 0;
-	for(int i=0; i<all_segments.size();i++) {
-		Segment seg = all_segments[i];
-		for(int j = seg.StartIdx(); j<=seg.EndIdx(); j++) {
-			mean_vec.AddVec(1.0, feats.Row(j));
-			tot_frames++;
-		}
-	}
-	return mean_vec;
+	this->ComputeMean(feats, mean_vec);
+
+	cov_vec.AddVec2(-1.0, mean_vec);
+	return;
 }
 
 
 // To Repeat the GLR code in Audioseg
-Vector<BaseFloat> Cluster::ComputeVarSum(const Matrix<BaseFloat>& feats, const Cluster* clust) {
-	std::vector<Segment> all_segments = clust->AllSegments();
-	int32 dim = feats.NumCols();
-	Vector<BaseFloat> cov_vec(dim);
+void Cluster::ComputeSum(const Matrix<BaseFloat>& feats, Vector<BaseFloat>& feats_sum) const {
 	int32 tot_frames = 0;
-	for(int i=0; i<all_segments.size();i++) {
-		Segment seg = all_segments[i];
-		for(int j = seg.StartIdx(); j<=seg.EndIdx(); j++) {
-			cov_vec.AddVec2(1.0, feats.Row(j));
-			tot_frames++;
+	for(int32 i=0; i<this->all_segments_.size();i++) {
+		Segment seg = this->all_segments_[i];
+		Vector<BaseFloat> mask = seg.Mask();
+		for(int32 j = seg.StartIdx(), k = 0; j<=seg.EndIdx(); j++, k++) {
+			if(mask(k) == 1.0) {
+				feats_sum.AddVec(1.0, feats.Row(j));
+				tot_frames++;
+			}
 		}
 	}
-	return cov_vec;
+	return;
+}
+
+
+// To Repeat the GLR code in Audioseg
+void Cluster::ComputeVarSum(const Matrix<BaseFloat>& feats, Vector<BaseFloat>& var_sum) const {
+	int32 tot_frames = 0;
+	for(int32 i=0; i<this->all_segments_.size();i++) {
+		Segment seg = this->all_segments_[i];
+		Vector<BaseFloat> mask = seg.Mask();
+		for(int32 j = seg.StartIdx(), k = 0; j<=seg.EndIdx(); j++, k++) {
+			if(mask(k) == 1.0) {
+				var_sum.AddVec2(1.0, feats.Row(j));
+				tot_frames++;
+			}
+		}
+	}
+	return;
 }
 
 
 // Followed implementation in Audioseg.
 BaseFloat Cluster::LogDet(const Matrix<BaseFloat> &feats) const {
-	Vector<BaseFloat> m = Cluster::ComputeSum(feats, this);
-	Vector<BaseFloat> v = Cluster::ComputeVarSum(feats, this);
-	BaseFloat z = 1.0 / this->frames_;
+	int32 dim = feats.NumCols();
+	Vector<BaseFloat> m(dim); 
+	this->ComputeSum(feats, m);
+	Vector<BaseFloat> v(dim);
+	this->ComputeVarSum(feats, v);
+	BaseFloat z = 1.0 / this->NumFramesAfterMask();
 	BaseFloat zz = z * z;
 	BaseFloat s = 0.0;
 	for (int i=0; i<feats.NumCols();i++) {
@@ -130,38 +150,75 @@ BaseFloat Cluster::LogDet(const Matrix<BaseFloat> &feats) const {
 }
 
 
-void Cluster::CollectFeatures(const Matrix<BaseFloat>& feats, const Cluster* clust, Matrix<BaseFloat>& feats_collect) {
-	int32 dim = feats.NumCols();
-	int32 nframes = clust->NumFrames();
-	feats_collect.Resize(nframes, dim);
-	std::vector<Segment> all_segments = clust->AllSegments();
+void Cluster::CollectFeatures(const Matrix<BaseFloat>& feats, Matrix<BaseFloat>& cluster_feats) const {
 	int insert_pos = 0;
-	for(int32 i=0; i<all_segments.size(); i++) {
-		Segment seg = all_segments[i];
-		for(int32 idx = seg.StartIdx(); idx <= seg.EndIdx(); idx++) {
-			feats_collect.Row(insert_pos).CopyFromVec(feats.Row(idx));
-			insert_pos++;
+	for(int32 i=0; i<this->all_segments_.size(); i++) {
+		Segment seg = this->all_segments_[i];
+		Vector<BaseFloat> mask = seg.Mask();
+		for(int32 idx = seg.StartIdx(), k = 0; idx <= seg.EndIdx(); idx++, k++) {
+			if(mask(k) == 1.0) {
+				cluster_feats.Row(insert_pos).CopyFromVec(feats.Row(idx));
+				insert_pos++;
+			}
 		}
 	}
 	return;
 }
 
-void Cluster::CollectPosteriors(const Posterior& posterior, const Cluster* clust, Posterior& posteriors_collect) {
-	int32 nframes = clust->NumFrames();
-	std::vector<Segment> all_segments = clust->AllSegments();
-	posteriors_collect.resize(nframes);
+
+void Cluster::CollectPosteriors(const Posterior& posterior, Posterior& cluster_posteriors) const {
 	int32 insert_pos = 0;
 
-	for(int32 i=0; i<all_segments.size(); i++) {
-		Segment seg = all_segments[i];
-		for(int32 idx = seg.StartIdx(); idx <= seg.EndIdx(); idx++) {
-			posteriors_collect[insert_pos] = posterior[idx];
-			insert_pos++;
+	for(int32 i=0; i<this->all_segments_.size(); i++) {
+		Segment seg = this->all_segments_[i];
+		Vector<BaseFloat> mask = seg.Mask();
+		for(int32 idx = seg.StartIdx(), k = 0; idx <= seg.EndIdx(); idx++, k++) {
+			if(mask(k) == 1.0) {
+				cluster_posteriors[insert_pos] = posterior[idx];
+				insert_pos++;
+			}
 		}
 	}
 	return;
 }
 
+/*
+void Cluster::SetIvector(Vector<double>& ivect) {
+	this->ivector_ = ivect;
+	return;
+}
+
+
+void Cluster::SetIvector(const Matrix<BaseFloat>& feats, 
+						   const Posterior& posterior, 
+						   const IvectorExtractor& extractor) {
+	// post probs of segment
+ 	Posterior::const_iterator start_iter = posterior.begin() + this->start_;
+	Posterior::const_iterator end_iter = posterior.begin() + this->end_ + 1;
+	Posterior seg_posterior(start_iter, end_iter);
+
+	// feature of segment
+	int32 dim = feats.NumCols();
+	int32 nframes = this->end_ - this->start_ + 1;
+	Matrix<BaseFloat> seg_feats(nframes, dim);
+	int insert_pos = 0;
+	for(int32 idx = this->start_; idx <= this->end_; idx++) {
+		seg_feats.Row(insert_pos).CopyFromVec(feats.Row(idx));
+		insert_pos++;
+	}
+
+	// ivector extraction
+    bool need_2nd_order_stats = false;
+    IvectorExtractorUtteranceStats utt_stats(extractor.NumGauss(),
+                                             extractor.FeatDim(),
+                                             need_2nd_order_stats);
+    utt_stats.AccStats(seg_feats, seg_posterior);
+    this->ivector_.Resize(extractor.IvectorDim());
+    this->ivector_(0) = extractor.PriorOffset();
+    extractor.GetIvectorDistribution(utt_stats, &ivector_, NULL);
+    return;
+}
+*/
 
 ClusterCollection::ClusterCollection() {
 	num_clusters_ = 0;
@@ -179,6 +236,16 @@ int32 ClusterCollection::NumFrames() {
 	int32 tot_frames = 0;
 	while(curr) {
 		tot_frames += curr->NumFrames();
+		curr = curr->next;
+	}
+	return tot_frames;
+}
+
+int32 ClusterCollection::NumFramesAfterMask() {
+	Cluster* curr = this->head_cluster_;
+	int32 tot_frames = 0;
+	while(curr) {
+		tot_frames += curr->NumFramesAfterMask();
 		curr = curr->next;
 	}
 	return tot_frames;
@@ -239,7 +306,7 @@ void ClusterCollection::BottomUpClustering(const Matrix<BaseFloat> &feats, const
 
 	// Compute the penalty BIC critera
 	int32 dim = feats.NumCols();
-	int32 tot_frames = this->NumFrames();
+	int32 tot_frames = this->NumFramesAfterMask();
 	int32 init_cluster_num = this->num_clusters_;
 	BaseFloat penalty = 0.5 * (dim + dim) * log(tot_frames);
 
@@ -434,7 +501,7 @@ BaseFloat ClusterCollection::DistanceOfTwoClustersGLR(const Matrix<BaseFloat> &f
 	BaseFloat log_det12 = cluster12->LogDet(feats);
 	BaseFloat log_det1 = cluster1->LogDet(feats);
 	BaseFloat log_det2 = cluster2->LogDet(feats);
-	BaseFloat dist = log_det12 * cluster12->NumFrames() - log_det1 * cluster1->NumFrames() - log_det2 * cluster2->NumFrames();
+	BaseFloat dist = log_det12 * cluster12->NumFramesAfterMask() - log_det1 * cluster1->NumFramesAfterMask() - log_det2 * cluster2->NumFramesAfterMask();
 
 	delete cluster12;
 
@@ -443,10 +510,20 @@ BaseFloat ClusterCollection::DistanceOfTwoClustersGLR(const Matrix<BaseFloat> &f
 
 
 BaseFloat ClusterCollection::DistanceOfTwoClustersKL2(const Matrix<BaseFloat> &feats, const Cluster* cluster1, const Cluster* cluster2) {
-	Vector<BaseFloat> mean_vec_1 = Cluster::ComputeMean(feats, cluster1);
-	Vector<BaseFloat> mean_vec_2 = Cluster::ComputeMean(feats, cluster2);
-	Vector<BaseFloat> cov_vec_1 = Cluster::ComputeCovDiag(feats, cluster1);
-	Vector<BaseFloat> cov_vec_2 = Cluster::ComputeCovDiag(feats, cluster2);
+	int32 dim = feats.NumCols();
+
+	Vector<BaseFloat> mean_vec_1(dim);
+	cluster1->ComputeMean(feats, mean_vec_1);
+
+	Vector<BaseFloat> mean_vec_2(dim);
+	cluster2->ComputeMean(feats, mean_vec_2);
+
+	Vector<BaseFloat> cov_vec_1(dim);
+	cluster1->ComputeCovDiag(feats, cov_vec_1);
+
+	Vector<BaseFloat> cov_vec_2(dim);
+	cluster2->ComputeCovDiag(feats, cov_vec_2);
+
 	return SymetricKlDistance(mean_vec_1, mean_vec_2, cov_vec_1, cov_vec_2);	
 }
 
@@ -454,13 +531,15 @@ BaseFloat ClusterCollection::DistanceOfTwoClustersKL2(const Matrix<BaseFloat> &f
 BaseFloat ClusterCollection::DistanceOfTwoClustersIvectorKL2(const Matrix<BaseFloat> &feats, const Cluster* cluster1, const Cluster* cluster2,
 															const Posterior& posterior, const IvectorExtractor& extractor) {
 
-	Matrix<BaseFloat> feats_clust1, feats_clust2; 
-	Cluster::CollectFeatures(feats, cluster1, feats_clust1);	
-	Cluster::CollectFeatures(feats, cluster2, feats_clust2);
+	int32 dim = feats.NumCols();
+	int32 nframes = this->NumFrames();
+	Matrix<BaseFloat> feats_clust1(nframes,dim), feats_clust2(nframes,dim); 
+	cluster1->CollectFeatures(feats, feats_clust1);	
+	cluster2->CollectFeatures(feats, feats_clust2);
 
-	Posterior postprob_clust1, postprob_clust2;
-	Cluster::CollectPosteriors(posterior, cluster1, postprob_clust1);
-	Cluster::CollectPosteriors(posterior, cluster2, postprob_clust2);
+	Posterior postprob_clust1(nframes), postprob_clust2(nframes);
+	cluster1->CollectPosteriors(posterior, postprob_clust1);
+	cluster2->CollectPosteriors(posterior, postprob_clust2);
 
 	Vector<double> ivector_clust1_mean, ivector_clust2_mean;
 	SpMatrix<double> ivector_clust1_covar, ivector_clust2_covar;

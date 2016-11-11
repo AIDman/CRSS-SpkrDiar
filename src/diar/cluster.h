@@ -26,15 +26,20 @@ public:
 	std::vector<Segment> AllSegments() const;
 	std::string Label() const;
 	int32 NumFrames() const;
+	int32 NumFramesAfterMask() const;
 	int32 NumSegments() const;
 	Segment KthSegment(int32 k) const;
 	BaseFloat LogDet(const Matrix<BaseFloat> &feats) const;
-	static Vector<BaseFloat> ComputeMean(const Matrix<BaseFloat>& feats, const Cluster* clust); 
-	static Vector<BaseFloat> ComputeCovDiag(const Matrix<BaseFloat>& feats, const Cluster* clust);
-	static Vector<BaseFloat> ComputeSum(const Matrix<BaseFloat>& feats, const Cluster* clust); 
-	static Vector<BaseFloat> ComputeVarSum(const Matrix<BaseFloat>& feats, const Cluster* clust);
-	static void CollectFeatures(const Matrix<BaseFloat>& feats, const Cluster* clust, Matrix<BaseFloat>& feats_collect);
-	static void CollectPosteriors(const Posterior& posterior, const Cluster* clust, Posterior& postprobs_collect);
+	void ComputeMean(const Matrix<BaseFloat>& feats, Vector<BaseFloat>& feats_mean) const; 
+	void ComputeCovDiag(const Matrix<BaseFloat>& feats, Vector<BaseFloat>& feats_cov_diag) const;
+	void ComputeSum(const Matrix<BaseFloat>& feats, Vector<BaseFloat>& featus_sum) const; 
+	void ComputeVarSum(const Matrix<BaseFloat>& feats, Vector<BaseFloat>& var_sum) const;
+	void CollectFeatures(const Matrix<BaseFloat>& feats, Matrix<BaseFloat>& feats_collect) const;
+	void CollectPosteriors(const Posterior& posterior, Posterior& postprobs_collect) const;
+	void SetIvector(Vector<double>& ivec);
+	void SetIvector(const Matrix<BaseFloat>& feats, 
+					const Posterior& posteriors, 
+					const IvectorExtractor& extractor);
 
 	Cluster* prev;
 	Cluster* next;
@@ -43,9 +48,10 @@ public:
 	static string prefix;
 
 private:
-	std::vector<Segment> list_;
+	std::vector<Segment> all_segments_;
 	std::string label_;
 	int32 frames_;
+	Vector<double> ivector_;
 };
 
 
@@ -54,6 +60,7 @@ public:
 	ClusterCollection();
 	string UttID();
 	int32 NumFrames();
+	int32 NumFramesAfterMask();
 	void InitFromNonLabeledSegments(SegmentCollection non_clustered_segmemts);
 	//InitFromLabeledSegments(SegmentCollection);
 	void BottomUpClustering(const Matrix<BaseFloat> &feats, const BaseFloat& lambda = 5.0, int32 target_cluster_num = 0, const int32& dist_type = 0);
@@ -87,6 +94,7 @@ std::string ToString(T val)
     stream << val;
     return stream.str();
 }
+
 
 }
 

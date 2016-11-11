@@ -16,12 +16,18 @@ Segment::Segment(const int32 start, const int32 end) {
 	this->label_ = "";
 	this->start_ = start;
 	this->end_ = end;
+	this->size_ = end - start + 1;
+	mask_.Resize(this->size_);
+	mask_.Set(1.0);
 }
 
 Segment::Segment(const std::string label, const int32 start, const int32 end) {
 	this->label_ = label;
 	this->start_ = start;
 	this->end_ = end;
+	this->size_ = end - start + 1;
+	mask_.Resize(this->size_);
+	mask_.Set(1.0);
 }
 
 std::string Segment::Label() {
@@ -37,7 +43,7 @@ int32 Segment::EndIdx() {
 } 
 
 int32 Segment::Size() {
-	return this->end_ - this->start_ + 1;
+	return this->size_;
 }
 
 void Segment::SetLabel(std::string label) {
@@ -79,6 +85,10 @@ void Segment::SetIvector(const Matrix<BaseFloat>& feats,
     return;
 }
 
+
+Vector<BaseFloat> Segment::Mask() {
+	return this->mask_;
+}
 
 Vector<double> Segment::Ivector() {
 	return this->ivector_;

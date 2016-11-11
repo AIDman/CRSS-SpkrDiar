@@ -28,6 +28,7 @@ public:
 	int32 EndIdx();	// return last frame index of segment
 	int32 Size(); // return the frame length of the segment
 	Vector<double> Ivector(); // return ith i-vector
+	Vector<BaseFloat> Mask(); // return the mask
 	void SetLabel(std::string label);
 	void SetIvector(Vector<double>& ivec);	
 	void SetIvector(const Matrix<BaseFloat>& feats, 
@@ -36,8 +37,10 @@ public:
 
 private:
 	std::string label_;
+	Vector<BaseFloat> mask_; // frame selection .,
 	int32 start_;
 	int32 end_;
+	int32 size_;
 	Vector<double> ivector_;
 };
 
