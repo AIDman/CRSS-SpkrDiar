@@ -17,11 +17,14 @@ int main(int argc, char *argv[]) {
         const char *usage = "Bottom Up clustering on segments, initial clustering using GLR, BIC. \n";
 
         int32 target_cluster_num = 0;
+        int32 min_update_segment = 0;
         BaseFloat lambda = FLT_MAX;
         std::string dist_type = "GLR";
 
+
         kaldi::ParseOptions po(usage);
-        po.Register("target_cluster_num", &target_cluster_num, "Target cluster number as stopping criterion");
+        po.Register("target-cluster-num", &target_cluster_num, "Target cluster number as stopping criterion");
+        po.Register("min-update-segment", &min_update_segment, "Clustering segments having frames larger than");
         po.Register("lambda", &lambda, "Lambda for BIC computation");
         po.Register("dist_type", &dist_type, "Distance Type Used For Clustering. Currently Supports GLR, KL2");
         po.Read(argc, argv);
@@ -54,11 +57,16 @@ int main(int argc, char *argv[]) {
             segment_clusters.InitFromNonLabeledSegments(speech_segments);
  
             if(dist_type == "GLR") {
-                segment_clusters.BottomUpClustering(feats, lambda, target_cluster_num, GLR_DISTANCE);
+                segment_clusters.BottomUpClustering(feats, lambda, target_cluster_num, GLR_DISTANCE, 50);
+                segment_clusters.BottomUpClustering(feats, lambda, target_cluster_num, GLR_DISTANCE, 20);
+                segment_clusters.BottomUpClustering(feats, lambda, target_cluster_num, GLR_DISTANCE, 0);
             }else if(dist_type == "KL2") {
-                segment_clusters.BottomUpClustering(feats, lambda, target_cluster_num, KL2_DISTANCE);
+                // Scheduled clustering. This is to avoid short segments to srewed up everything.
+                segment_clusters.BottomUpClustering(feats, lambda, target_cluster_num, KL2_DISTANCE, 50);
+                segment_clusters.BottomUpClustering(feats, lambda, target_cluster_num, KL2_DISTANCE, 20);
+                segment_clusters.BottomUpClustering(feats, lambda, target_cluster_num, KL2_DISTANCE, 0);
             }
-            
+
             segment_clusters.Write(segments_dirname);
 
             segment_clusters.WriteToRttm(rttm_outputdir);

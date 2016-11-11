@@ -9,6 +9,7 @@ Cluster::Cluster(Segment one_segment){
 	this->label_ = Cluster::prefix + ToString(Cluster::id_generator++);
 	this->all_segments_.push_back(one_segment);
 	this->frames_ =  one_segment.Size();
+	this->frames_after_mask_ = one_segment.SizeAfterMask();
 }
 
 int Cluster::id_generator = 1;
@@ -17,6 +18,7 @@ std::string Cluster::prefix = "C";
 void Cluster::AddSegment(Segment new_segment) {
 	this->all_segments_.push_back(new_segment);
 	this->frames_ = this->frames_ + new_segment.Size();
+	this->frames_after_mask_ += new_segment.SizeAfterMask();
 }
 
 
@@ -41,16 +43,7 @@ int32 Cluster::NumFrames() const {
 
 
 int32 Cluster::NumFramesAfterMask() const {
-	int32 nf = 0;
-	for(int32 i = 0; i<this->all_segments_.size(); i++) {
-		Segment seg = all_segments_[i];
-		Vector<BaseFloat> mask = seg.Mask();
-		for(int32 j = 0; j<mask.Dim(); j++) {
-			if (mask(j) == 1.0) nf++;
-		}
-
-	}
-	return nf;
+	return this->frames_after_mask_;
 }
 
 
@@ -287,7 +280,7 @@ Cluster* ClusterCollection::Head() {
  * this will cause the clustering continues untill one cluster left, or meets other critera. 
  * The target_cluster_num is also set to 0 following the same logic. 
  */
-void ClusterCollection::BottomUpClustering(const Matrix<BaseFloat> &feats, const BaseFloat& lambda, int32 target_cluster_num, const int32& dist_type) {
+void ClusterCollection::BottomUpClustering(const Matrix<BaseFloat> &feats, const BaseFloat& lambda, int32 target_cluster_num, const int32& dist_type, const int32& min_update_len) {
 	this->dist_type_ = dist_type;
 
 	// Give each initial cluster and idx number, to easy manipulation
@@ -304,14 +297,25 @@ void ClusterCollection::BottomUpClustering(const Matrix<BaseFloat> &feats, const
 	std::vector<std::vector<BaseFloat>> dist_matrix(this->num_clusters_, std::vector<BaseFloat>(100000.0, num_clusters_));
 	std::vector<bool> to_be_updated(this->num_clusters_, true);
 
-	// Compute the penalty BIC critera
-	int32 dim = feats.NumCols();
-	int32 tot_frames = this->NumFramesAfterMask();
-	int32 init_cluster_num = this->num_clusters_;
-	BaseFloat penalty = 0.5 * (dim + dim) * log(tot_frames);
+	// Cluster only Segments/clusters contain larger than specified number of frame
+	Cluster* itr = this->head_cluster_;
+	int32 idx = 0, non_updateable = 0;
+	std::vector<BaseFloat> flt_max_vec(this->num_clusters_, 1000000.0);
+	while(min_update_len != 0 && itr) {
+		if(itr->NumFramesAfterMask() < min_update_len) {
+			dist_matrix[idx] = flt_max_vec;
+			to_be_updated[idx] = false;
+			non_updateable++;
+			idx++;
+		}
+		itr = itr->next;
+	}
 
 	// Start HAC clustering
-	while(this->num_clusters_ > 1) {
+	int32 init_cluster_num = this->num_clusters_;
+	while(this->num_clusters_ > non_updateable + 2) {
+
+
 
 		std::vector<Cluster*> min_dist_clusters(2);
 		FindMinDistClusters(feats, dist_matrix, to_be_updated, cluster_idx_map, min_dist_clusters);
@@ -320,6 +324,12 @@ void ClusterCollection::BottomUpClustering(const Matrix<BaseFloat> &feats, const
 				KALDI_ERR << "NULL CLUSTER!";
 
 		BaseFloat dist_glr = DistanceOfTwoClustersGLR(feats, min_dist_clusters[0], min_dist_clusters[1]);
+
+		// Compute the penalty BIC critera
+		int32 dim = feats.NumCols();
+		//int32 tot_frames = this->NumFramesAfterMask();
+		int32 tot_frames = min_dist_clusters[0]->NumFramesAfterMask() + min_dist_clusters[1]->NumFramesAfterMask();
+		BaseFloat penalty = 0.5 * (dim + dim) * log(tot_frames);
 		BaseFloat delta_bic = dist_glr - lambda * penalty;
 
 		if(delta_bic > 0 || this->num_clusters_ <= target_cluster_num) {
@@ -339,13 +349,15 @@ void ClusterCollection::BottomUpClustering(const Matrix<BaseFloat> &feats, const
 
 		this->num_clusters_--;
 	}
+
+	KALDI_LOG << "Cluster Number Reduced From: " << init_cluster_num << " To "<< num_clusters_;
+
 	return;
 }
 
-
+/*
 void ClusterCollection::BottomUpClusteringIvector(const Matrix<BaseFloat> &feats, const Posterior& posterior, const IvectorExtractor& extractor, 
 												const BaseFloat& lambda, int32 target_cluster_num, const int32& dist_type ) {
-	this->dist_type_ = dist_type;
 
 	// Give each initial cluster and idx number, to easy manipulation
 	std::unordered_map<Cluster*, int32> cluster_idx_map;
@@ -361,17 +373,31 @@ void ClusterCollection::BottomUpClusteringIvector(const Matrix<BaseFloat> &feats
 	std::vector<std::vector<BaseFloat>> dist_matrix(this->num_clusters_, std::vector<BaseFloat>(100000.0, num_clusters_));
 	std::vector<bool> to_be_updated(this->num_clusters_, true);
 
+	// Cluster only Segments/clusters contain larger than specified number of frame
+	Cluster* itr = this->head_cluster_;
+	int32 idx = 0, non_update_size = 0;
+	std::vector<BaseFloat> flt_max_vec(this->num_clusters_, 100000.0);
+	while(min_update_len != 0 && itr) {
+		if(itr->NumFramesAfterMask() < min_update_len) {
+			dist_matrix[idx] = flt_max_vec;
+			to_be_updated[idx] = false;
+			non_update_size++;
+			idx++;
+		}
+		itr = itr->next;
+	}
+
 	// Compute the penalty BIC critera
 	int32 dim = feats.NumCols();
-	int32 tot_frames = this->NumFrames();
+	int32 tot_frames = this->NumFramesAfterMask();
 	int32 init_cluster_num = this->num_clusters_;
 	BaseFloat penalty = 0.5 * (dim + dim) * log(tot_frames);
 
 	// Start HAC clustering
-	while(this->num_clusters_ > 1) {
+	while(this->num_clusters_ > non_update_size + 1) {
 
 		std::vector<Cluster*> min_dist_clusters(2);
-		FindMinDistClustersIvector(feats,  posterior, extractor, dist_matrix, to_be_updated, cluster_idx_map, min_dist_clusters);
+		FindMinDistClustersIvector(feats, posterior, extractor, to_be_updated, cluster_idx_map, min_dist_clusters);
 
 		if (min_dist_clusters[0]==NULL || min_dist_clusters[1]==NULL) 
 				KALDI_ERR << "NULL CLUSTER!";
@@ -399,6 +425,8 @@ void ClusterCollection::BottomUpClusteringIvector(const Matrix<BaseFloat> &feats
 	return;
 }
 
+}
+*/
 
 void ClusterCollection::FindMinDistClusters(const Matrix<BaseFloat> &feats, std::vector<std::vector<BaseFloat>>& dist_matrix, std::vector<bool>& to_be_updated, 
 	std::unordered_map<Cluster*, int32>& cluster_idx_map, std::vector<Cluster*> &min_dist_clusters) {
@@ -412,14 +440,12 @@ void ClusterCollection::FindMinDistClusters(const Matrix<BaseFloat> &feats, std:
 		Cluster* p2 = p1->next;
 		while(p2) {
 			int32 p2_idx = cluster_idx_map[p2];
-			
 			if(!to_be_updated[p1_idx]) {
 				// been updated before, avoid recalculation
 				dist = dist_matrix[p1_idx][p2_idx];
 
-			}else{
+			} else{
 				// to be updated
-
 				switch(this->dist_type_) {
 				
 				case GLR_DISTANCE:

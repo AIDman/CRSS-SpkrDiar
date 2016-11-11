@@ -19,6 +19,7 @@ Segment::Segment(const int32 start, const int32 end) {
 	this->size_ = end - start + 1;
 	mask_.Resize(this->size_);
 	mask_.Set(1.0);
+	this->size_after_mask_ = this->size_;
 }
 
 Segment::Segment(const std::string label, const int32 start, const int32 end) {
@@ -28,6 +29,7 @@ Segment::Segment(const std::string label, const int32 start, const int32 end) {
 	this->size_ = end - start + 1;
 	mask_.Resize(this->size_);
 	mask_.Set(1.0);
+	this->size_after_mask_ = this->size_;
 }
 
 std::string Segment::Label() {
@@ -44,6 +46,10 @@ int32 Segment::EndIdx() {
 
 int32 Segment::Size() {
 	return this->size_;
+}
+
+int32 Segment::SizeAfterMask() {
+	return this->size_after_mask_;
 }
 
 void Segment::SetLabel(std::string label) {

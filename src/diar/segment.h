@@ -27,6 +27,7 @@ public:
 	int32 StartIdx();  // return start frame index of segment
 	int32 EndIdx();	// return last frame index of segment
 	int32 Size(); // return the frame length of the segment
+	int32 SizeAfterMask(); // return the frame length of the segment after masking
 	Vector<double> Ivector(); // return ith i-vector
 	Vector<BaseFloat> Mask(); // return the mask
 	void SetLabel(std::string label);
@@ -41,6 +42,7 @@ private:
 	int32 start_;
 	int32 end_;
 	int32 size_;
+	int32 size_after_mask_;
 	Vector<double> ivector_;
 };
 

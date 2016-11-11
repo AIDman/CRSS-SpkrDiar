@@ -31,7 +31,7 @@ run_mfcc(){
 
     log_end "Extract MFCC features"
 }
-run_mfcc $data
+#run_mfcc $data
 
 
 make_ref(){
@@ -44,7 +44,7 @@ make_ref(){
 
     log_end "Generate Reference Segments/Labels/RTTM files"
 }
-make_ref $data 
+#make_ref $data 
 
 
 bottom_up_clustering(){
@@ -54,8 +54,8 @@ bottom_up_clustering(){
 
     mkdir -p exp/clustering/$x/segments exp/clustering/$x/rttms; rm -f exp/clustering/$x/segments/*; rm -f exp/clustering/$x/rttms/*
     feats="ark,s,cs:copy-feats scp:data/$x/feats.scp ark:- | apply-cmvn --norm-vars=true scp:data/$x/cmvn.scp ark:- ark:- | add-deltas --delta-order=1 ark:- ark:-|"	
-    #segmentClustering --target_cluster_num=0 --lambda=15 --dist_type=KL2 exp/ref/$x/segments/segments.scp "$feats" exp/clustering/$x/segments exp/clustering/$x/rttms 2>&1 | tee log
-    segmentClustering  --lambda=15 --dist_type=KL2 exp/ref/$x/segments/segments.scp "$feats" exp/clustering/$x/segments exp/clustering/$x/rttms 2>&1 | tee log
+    segmentClustering --target_cluster_num=0 --lambda=15 --dist_type=KL2 exp/ref/$x/segments/segments.scp "$feats" exp/clustering/$x/segments exp/clustering/$x/rttms 2>&1 | tee log
+    #segmentClustering  --min-update-segment=20 --lambda=15 --dist_type=GLR exp/ref/$x/segments/segments.scp "$feats" exp/clustering/$x/segments exp/clustering/$x/rttms 2>&1 | tee log
     
     log_end "Bottom Up Clustering"
 }
