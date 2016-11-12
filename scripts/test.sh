@@ -17,7 +17,7 @@ log_end(){
 
 set -e # exit on error
 
-data="is_sessions_file_1" # data for diarization
+data="is_sessions_file_31" # data for diarization
 data_dev="is_sessions"  # dev_data is for UBM, TV matrix training for i-vector
 
 run_mfcc(){

@@ -48,6 +48,7 @@ public:
 	void SetIvector(Vector<double>& ivec);
 	void SetIvector(Vector<double>& ivec, SpMatrix<double>& ivec_covar);
 	void SetIvector(IvectorInfo& ivec_info);
+	void NormalizeIvector(Vector<double>& ivectors_average);
 
 	Cluster* prev;
 	Cluster* next;
@@ -75,10 +76,12 @@ public:
 	//InitFromLabeledSegments(SegmentCollection);
 	void BottomUpClustering(const Matrix<BaseFloat> &feats, const BaseFloat& lambda = 5.0, int32 target_cluster_num = 0, const int32& dist_type = 0, const int32& min_update_len  = 0);
 	void BottomUpClusteringIvector(IvectorInfo& ivec_info, 
-									const BaseFloat& lambda = 5.0, 
+									const BaseFloat& dist_thr = 1.0, 
 									int32 target_cluster_num = 0, 
 									const int32& min_update_len = 0);
 	void SetIvector(IvectorInfo& ivec_info);
+	void ComputeIvectorMean(Vector<double>& ivectors_average);
+	void NormalizeIvectors(Vector<double>& ivectors_average);
 
 	void FindMinDistClusters(const Matrix<BaseFloat> &feats, 
 							std::vector<std::vector<BaseFloat> >& dist_matrix, 
@@ -86,7 +89,7 @@ public:
 							std::unordered_map<Cluster*, int32>& cluster_idx_map, 
 							std::vector<Cluster*> &min_dist_clusters);
 
-	void FindMinDistClustersIvector(std::vector<std::vector<BaseFloat> >& dist_matrix, 
+	BaseFloat FindMinDistClustersIvector(std::vector<std::vector<BaseFloat> >& dist_matrix, 
 									std::vector<bool>& to_be_updated, 
 									std::unordered_map<Cluster*, int32>& cluster_idx_map, 
 									std::vector<Cluster*> &min_dist_clusters);

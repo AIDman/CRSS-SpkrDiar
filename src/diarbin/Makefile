@@ -9,7 +9,8 @@ include ${KALDI_DIR}/src/kaldi.mk
 
 #BINFILES = changeDetectBIC segIvectorExtract ivectorTest glpkIlpTemplate glpkToRTTM labelToRTTM
 #BINFILES = changeDetectBIC ivectorTest segIvectorExtract labelToSegment writeTemplateILP glpkToRTTM labelToRTTM
-BINFILES = labelToSegment glpkToRTTM labelToRTTM segmentClustering segmentClusteringIvector ivectorTest
+#BINFILES = labelToSegment glpkToRTTM labelToRTTM segmentClustering segmentClusteringIvector ivectorTest
+BINFILES = segmentClusteringIvector
 
 OBJFILES = 
 

@@ -18,7 +18,7 @@ log_end(){
 set -e # exit on error
 
 #data="demo"
-data="is_sessions_file_31"
+data="is_sessions_file_1"
 run_mfcc(){
     log_start "Extract MFCC features"
 

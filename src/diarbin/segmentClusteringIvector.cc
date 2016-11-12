@@ -18,13 +18,13 @@ int main(int argc, char *argv[]) {
 
         int32 target_cluster_num = 0;
         BaseFloat lambda = FLT_MAX;
-        BaseFloat lambda_ivec = FLT_MAX;
+        BaseFloat ivcds_thr = 1.0;
         std::string dist_type = "GLR";
 
         kaldi::ParseOptions po(usage);
         po.Register("target-cluster_num", &target_cluster_num, "Target cluster number as stopping criterion");
         po.Register("lambda", &lambda, "Lambda for BIC computation");
-        po.Register("lambda-ivec", &lambda_ivec, "Lambda for BIC computation");
+        po.Register("ivcds-thr", &ivcds_thr, "Ivector CDS distance threshold");
         po.Register("dist-type", &dist_type, "Distance Type Used For Clustering. Currently Supports GLR, KL2");
         po.Read(argc, argv);
 
@@ -67,8 +67,8 @@ int main(int argc, char *argv[]) {
             segment_clusters.InitFromNonLabeledSegments(speech_segments);
  
             //segment_clusters.BottomUpClustering(feats, lambda, target_cluster_num, KL2_DISTANCE, 50);
-            segment_clusters.BottomUpClusteringIvector(ivec_info, lambda_ivec, target_cluster_num, 50);
-            segment_clusters.BottomUpClusteringIvector(ivec_info, lambda_ivec, target_cluster_num, 0);
+            //segment_clusters.BottomUpClusteringIvector(ivec_info, ivcds_thr, target_cluster_num, 50);
+            segment_clusters.BottomUpClusteringIvector(ivec_info, ivcds_thr, target_cluster_num, 0);
             
             segment_clusters.Write(segments_dirname);
 

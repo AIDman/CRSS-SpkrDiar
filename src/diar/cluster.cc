@@ -216,12 +216,22 @@ void Cluster::SetIvector(IvectorInfo& ivec_info) {
 	Vector<double> ivector_mean;
 	SpMatrix<double> ivector_covar;
 	ComputeIvector(cluster_feats, cluster_posteriors, *ivec_info.extractor_, ivector_mean, ivector_covar);
+
+	// length nomalization
+	BaseFloat norm = ivector_mean.Norm(2.0);
+    BaseFloat ratio = norm / sqrt(ivector_mean.Dim()); // how much larger it is
+    ivector_mean.Scale(1.0 / ratio);
+
 	this->ivector_ = ivector_mean;
-	this->ivector_covar_ = ivector_covar;
+	this->ivector_covar_ = ivector_covar; //TO DO: ivector_covar should changes after length normalization
 
     return;
 }
 
+void Cluster::NormalizeIvector(Vector<double>& ivectors_average) {
+	this->ivector_.AddVec(-1.0, ivectors_average);
+	return;
+}
 
 ClusterCollection::ClusterCollection() {
 	num_clusters_ = 0;
@@ -283,6 +293,39 @@ void ClusterCollection::InitFromNonLabeledSegments(SegmentCollection non_cluster
 
 Cluster* ClusterCollection::Head() {
 	return this->head_cluster_;
+}
+
+
+void ClusterCollection::SetIvector(IvectorInfo& ivec_info) {
+	Cluster* curr = this->head_cluster_;
+	while(curr) {
+		curr->SetIvector(ivec_info);
+		curr = curr->next;
+	}
+	return;
+}
+
+
+void ClusterCollection::ComputeIvectorMean(Vector<double>& ivectors_average) {
+	Cluster* curr = this->head_cluster_;
+	ivectors_average.Resize(curr->Ivector().Dim());
+	while(curr) {
+		Vector<double> curr_ivector = curr->Ivector();
+		ivectors_average.AddVec(1.0/this->num_clusters_, curr_ivector);
+		curr = curr->next;
+	}
+	return;
+}
+
+
+void ClusterCollection::NormalizeIvectors(Vector<double>& ivectors_average) {
+	Cluster* curr = this->head_cluster_;
+	while(curr) {
+		Vector<double> curr_ivector = curr->Ivector();
+		curr_ivector.AddVec(-1.0, ivectors_average);
+		curr->SetIvector(curr_ivector);
+		curr = curr->next;
+	}
 }
 
 
@@ -367,12 +410,20 @@ void ClusterCollection::BottomUpClustering(const Matrix<BaseFloat> &feats, const
 
 
 void ClusterCollection::BottomUpClusteringIvector(IvectorInfo& ivec_info, 
-													const BaseFloat& lambda, 
+													const BaseFloat& dist_thr, 
 													int32 target_cluster_num, 
 													const int32& min_update_len) {
 
+
 	// Compute I-vector For each cluster
 	this->SetIvector(ivec_info);
+
+	// compute averge
+    Vector<double> ivectors_average;
+    this->ComputeIvectorMean(ivectors_average);
+
+    // normalize ivectors
+    this->NormalizeIvectors(ivectors_average);
 
 	// Give each initial cluster and idx number, to easy manipulation
 	std::unordered_map<Cluster*, int32> cluster_idx_map;
@@ -402,40 +453,33 @@ void ClusterCollection::BottomUpClusteringIvector(IvectorInfo& ivec_info,
 		itr = itr->next;
 	}
 
-	// Compute the penalty BIC critera
-	int32 dim = (*ivec_info.feats_).NumCols();
-	int32 tot_frames = this->NumFramesAfterMask();
 	int32 init_cluster_num = this->num_clusters_;
-	BaseFloat penalty = 0.5 * (dim + dim) * log(tot_frames);
-
 	// Start HAC clustering
 	while(this->num_clusters_ > non_update_size + 2) {
 
 		std::vector<Cluster*> min_dist_clusters(2);
-		FindMinDistClustersIvector(dist_matrix, to_be_updated, cluster_idx_map, min_dist_clusters);
+		BaseFloat min_dist_ivcds = FindMinDistClustersIvector(dist_matrix, to_be_updated, cluster_idx_map, min_dist_clusters);
 
 		if (min_dist_clusters[0]==NULL || min_dist_clusters[1]==NULL) 
 				KALDI_ERR << "NULL CLUSTER!";
 
-		BaseFloat dist_glr = DistanceOfTwoClustersGLR((*ivec_info.feats_), min_dist_clusters[0], min_dist_clusters[1]);
-		BaseFloat delta_bic = dist_glr - lambda * penalty;
 
-		if(delta_bic > 0 || this->num_clusters_ <= target_cluster_num) {
+		if(min_dist_ivcds > dist_thr || this->num_clusters_ <= target_cluster_num) {
 			KALDI_LOG << "Cluster Number Reduced From: " << init_cluster_num << " To "<< num_clusters_;
 			return;
-		} 	
+		}	
 
 		MergeClusters(min_dist_clusters[0], min_dist_clusters[1]);
 
 		for(size_t i=0; i<to_be_updated.size();i++) {
 			if(i == cluster_idx_map[min_dist_clusters[0]]) {
 				to_be_updated[i] = true;
+				min_dist_clusters[0]->SetIvector(ivec_info);
+				min_dist_clusters[0]->NormalizeIvector(ivectors_average);
 			}else{
 				to_be_updated[i] = false;
 			}
 		}
-
-		this->SetIvector(ivec_info);
 
 		this->num_clusters_--;
 	}
@@ -443,34 +487,6 @@ void ClusterCollection::BottomUpClusteringIvector(IvectorInfo& ivec_info,
 	KALDI_LOG << "Cluster Number Reduced From: " << init_cluster_num << " To "<< num_clusters_;
 
 	return;
-}
-
-
-void ClusterCollection::SetIvector(IvectorInfo& ivec_info) {
-	Cluster* curr = this->head_cluster_;
-	Vector<double> ivectors_average(ivec_info.extractor_->IvectorDim());
-	while(curr) {
-		curr->SetIvector(ivec_info);
-		Vector<double> curr_ivector = curr->Ivector();
-
-		// length nomalization
-		BaseFloat norm = curr_ivector.Norm(2.0);
-        BaseFloat ratio = norm / sqrt(curr_ivector.Dim()); // how much larger it is
-        curr_ivector.Scale(1.0 / ratio);
-
-        // compute averge
-        ivectors_average.AddVec(1.0/this->num_clusters_, curr_ivector);
-
-		curr = curr->next;
-	}
-
-	curr = this->head_cluster_;
-	while(curr) {
-		Vector<double> curr_ivector = curr->Ivector();
-		curr_ivector.AddVec(-1.0, ivectors_average);
-		curr->SetIvector(curr_ivector);
-		curr = curr->next;
-	}
 }
 
 
@@ -522,7 +538,7 @@ void ClusterCollection::FindMinDistClusters(const Matrix<BaseFloat> &feats, std:
 }
 
 
-void ClusterCollection::FindMinDistClustersIvector(std::vector<std::vector<BaseFloat>>& dist_matrix, std::vector<bool>& to_be_updated, 
+BaseFloat ClusterCollection::FindMinDistClustersIvector(std::vector<std::vector<BaseFloat>>& dist_matrix, std::vector<bool>& to_be_updated, 
 	std::unordered_map<Cluster*, int32>& cluster_idx_map, std::vector<Cluster*> &min_dist_clusters) {
 
 	if(num_clusters_<2) KALDI_ERR << "Less than two clusters, could not find min dist clusters";
@@ -553,7 +569,9 @@ void ClusterCollection::FindMinDistClustersIvector(std::vector<std::vector<BaseF
 		}
 		p1 = p1->next;
 	}
-	return;
+
+	KALDI_LOG << "MIN Ivector Distance: " << min_dist;
+	return min_dist;
 }
 
 

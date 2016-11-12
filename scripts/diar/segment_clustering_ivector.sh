@@ -69,7 +69,7 @@ if [ $stage -le 0 ]; then
 	ark,s,cs:- ark:- \| scale-post ark:- $posterior_scale ark,t:$dir/posterior.JOB || exit 1;
 
   $cmd JOB=1:$nj $dir/log/segment_clustering_ivector.JOB.log \
-    segmentClusteringIvector --lambda=5 --lambda-ivec=15 $segdir/segments.scp "$feats" ark,s,cs:$dir/posterior.JOB $extractor_dir/final.ie \
+    segmentClusteringIvector --lambda=5 --ivcds-thr=0.7 $segdir/segments.scp "$feats" ark,s,cs:$dir/posterior.JOB $extractor_dir/final.ie \
 	$dir/segments $dir/rttms|| exit 1;
 
 fi
