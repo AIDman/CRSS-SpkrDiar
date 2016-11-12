@@ -1,4 +1,4 @@
-# CRSS Speaker Diarization Toolkit (CRSS-SpkDiar)
+# CRSS Speaker Diarization Toolkit (CRSS-SpkrDiar)
 
 CRSS-SpkDiar is a C++ based speaker diarization toolkit, built on top of famous open source speech recognition platform of Kaldi. The main objective of this toolkit is as follow:
   - Simple integration with Kaldi ASR, 
