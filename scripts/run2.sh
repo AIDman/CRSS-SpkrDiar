@@ -17,7 +17,7 @@ log_end(){
 
 set -e # exit on error
 
-data="is_sessions_file_5" # data for diarization
+data="demo" # data for diarization
 data_dev="is_sessions"  # dev_data is for UBM, TV matrix training for i-vector
 
 run_mfcc(){
@@ -54,7 +54,7 @@ make_ref(){
 
     log_end "Generate Reference Segments/Labels/RTTM files"
 }
-#make_ref 
+make_ref 
 
 train_extractor(){
     ubmdim=256

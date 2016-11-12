@@ -25,3 +25,16 @@ exp/result_DER/demo/IS1008b.Mix-Headset.der: OVERALL SPEAKER DIARIZATION ERROR =
 exp/result_DER/demo/IS1008c.Mix-Headset.der: OVERALL SPEAKER DIARIZATION ERROR = 36.68 percent `(ALL)
 exp/result_DER/demo/IS1008d.Mix-Headset.der: OVERALL SPEAKER DIARIZATION ERROR = 35.02 percent `(ALL)
 
+exp/result_DER/demo/IS1000a.Mix-Headset.der: OVERALL SPEAKER DIARIZATION ERROR = 12.38 percent `(ALL)
+exp/result_DER/demo/IS1001a.Mix-Headset.der: OVERALL SPEAKER DIARIZATION ERROR = 32.36 percent `(ALL)
+exp/result_DER/demo/IS1001b.Mix-Headset.der: OVERALL SPEAKER DIARIZATION ERROR = 9.96 percent `(ALL)
+exp/result_DER/demo/IS1001c.Mix-Headset.der: OVERALL SPEAKER DIARIZATION ERROR = 11.04 percent `(ALL)
+exp/result_DER/demo/IS1003b.Mix-Headset.der: OVERALL SPEAKER DIARIZATION ERROR = 29.37 percent `(ALL)
+exp/result_DER/demo/IS1003d.Mix-Headset.der: OVERALL SPEAKER DIARIZATION ERROR = 48.56 percent `(ALL)
+exp/result_DER/demo/IS1006b.Mix-Headset.der: OVERALL SPEAKER DIARIZATION ERROR = 6.92 percent `(ALL)
+exp/result_DER/demo/IS1006d.Mix-Headset.der: OVERALL SPEAKER DIARIZATION ERROR = 49.66 percent `(ALL)
+exp/result_DER/demo/IS1008a.Mix-Headset.der: OVERALL SPEAKER DIARIZATION ERROR = 9.01 percent `(ALL)
+exp/result_DER/demo/IS1008b.Mix-Headset.der: OVERALL SPEAKER DIARIZATION ERROR = 5.20 percent `(ALL)
+exp/result_DER/demo/IS1008c.Mix-Headset.der: OVERALL SPEAKER DIARIZATION ERROR = 37.96 percent `(ALL)
+exp/result_DER/demo/IS1008d.Mix-Headset.der: OVERALL SPEAKER DIARIZATION ERROR = 32.42 percent `(ALL)
+
