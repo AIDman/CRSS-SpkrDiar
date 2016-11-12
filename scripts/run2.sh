@@ -17,7 +17,7 @@ log_end(){
 
 set -e # exit on error
 
-data="is_sessions_file_1" # data for diarization
+data="is_sessions_file_31" # data for diarization
 data_dev="is_sessions"  # dev_data is for UBM, TV matrix training for i-vector
 
 run_mfcc(){
@@ -31,7 +31,7 @@ run_mfcc(){
 
     log_end "Extract MFCC features"
 }
-run_mfcc 
+#run_mfcc 
 
 
 run_vad(){
@@ -76,25 +76,23 @@ test_ivectors(){
 
     diar/test_ivector_score.sh --nj 1 exp/extractor_256 data/$data exp/ref/$data/labels exp/temp/test_ivectors 
 }
-test_ivectors
+#test_ivectors
 
 
 bottom_up_clustering(){
     log_start "Bottom Up Clustering With Ivector"
 
-    mkdir -p exp/clustering/$x/segments exp/clustering/$x/rttms; rm -f exp/clustering/$x/segments/*; rm -f exp/clustering/$x/rttms/*
-    feats="ark,s,cs:copy-feats scp:data/$data/feats.scp ark:- | apply-cmvn --norm-vars=true scp:data/$data/cmvn.scp ark:- ark:- | add-deltas --delta-order=1 ark:- ark:-|"	
-    segmentClustering  --lambda=15 --dist_type=KL2 exp/ref/$x/segments/segments.scp "$feats" exp/clustering/$data/segments exp/clustering/$data/rttms
+    diar/segment_clustering_ivector.sh --nj 1 exp/ref/$data/segments exp/extractor_256 data/$data exp/clustering_ivector/$data	
     
     log_end "Bottom Up Clustering With Ivector"
 }
-#bottom_up_clustering
+bottom_up_clustering
 
 bottom_up_clustering_der(){
 	
-    diar/compute_DER.sh --sanity_check false exp/ref/$data/rttms exp/clustering/$data/rttms exp/result_DER/$data	
+    diar/compute_DER.sh --sanity_check false exp/ref/$data/rttms exp/clustering_ivector/$data/rttms exp/result_DER/$data	
     grep OVERALL exp/result_DER/$data/*.der		
 
 }
-#bottom_up_clustering_der
+bottom_up_clustering_der
 

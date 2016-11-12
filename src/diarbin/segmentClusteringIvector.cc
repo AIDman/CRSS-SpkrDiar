@@ -18,12 +18,14 @@ int main(int argc, char *argv[]) {
 
         int32 target_cluster_num = 0;
         BaseFloat lambda = FLT_MAX;
+        BaseFloat lambda_ivec = FLT_MAX;
         std::string dist_type = "GLR";
 
         kaldi::ParseOptions po(usage);
-        po.Register("target_cluster_num", &target_cluster_num, "Target cluster number as stopping criterion");
+        po.Register("target-cluster_num", &target_cluster_num, "Target cluster number as stopping criterion");
         po.Register("lambda", &lambda, "Lambda for BIC computation");
-        po.Register("dist_type", &dist_type, "Distance Type Used For Clustering. Currently Supports GLR, KL2");
+        po.Register("lambda-ivec", &lambda_ivec, "Lambda for BIC computation");
+        po.Register("dist-type", &dist_type, "Distance Type Used For Clustering. Currently Supports GLR, KL2");
         po.Read(argc, argv);
 
         if (po.NumArgs() != 6) {
@@ -41,6 +43,7 @@ int main(int argc, char *argv[]) {
         RandomAccessBaseFloatMatrixReader feature_reader(feature_rspecifier);
         RandomAccessPosteriorReader posterior_reader(posterior_rspecifier);
         IvectorExtractor extractor;
+        ReadKaldiObject(ivector_extractor_rxfilename, &extractor);
 
         // read in segments from each file
         Input ki(segments_scpfile);  // no binary argment: never binary.
@@ -51,13 +54,21 @@ int main(int argc, char *argv[]) {
             utt_segments.Read(line);
 
             // read features
-            const Matrix<BaseFloat> &feats = feature_reader.Value(utt_segments.UttID());
+            Matrix<BaseFloat> feats = feature_reader.Value(utt_segments.UttID());
             SegmentCollection speech_segments = utt_segments.GetSpeechSegments();
             ClusterCollection segment_clusters;
  
+            // read posterior
+            Posterior posteriors = posterior_reader.Value(utt_segments.UttID());
+
+            // get ivect_info
+            IvectorInfo ivec_info(&feats, &posteriors, &extractor);
+
             segment_clusters.InitFromNonLabeledSegments(speech_segments);
  
-            segment_clusters.BottomUpClusteringIvector(feats, posterior_reader.Value(utt_segments.UttID()), extractor, lambda, target_cluster_num, GLR_DISTANCE);
+            //segment_clusters.BottomUpClustering(feats, lambda, target_cluster_num, KL2_DISTANCE, 50);
+            segment_clusters.BottomUpClusteringIvector(ivec_info, lambda_ivec, target_cluster_num, 50);
+            segment_clusters.BottomUpClusteringIvector(ivec_info, lambda_ivec, target_cluster_num, 0);
             
             segment_clusters.Write(segments_dirname);
 

@@ -18,7 +18,7 @@ log_end(){
 set -e # exit on error
 
 #data="demo"
-data="is_sessions_file_1"
+data="is_sessions_file_31"
 run_mfcc(){
     log_start "Extract MFCC features"
 
@@ -54,8 +54,8 @@ bottom_up_clustering(){
 
     mkdir -p exp/clustering/$x/segments exp/clustering/$x/rttms; rm -f exp/clustering/$x/segments/*; rm -f exp/clustering/$x/rttms/*
     feats="ark,s,cs:copy-feats scp:data/$x/feats.scp ark:- | apply-cmvn --norm-vars=true scp:data/$x/cmvn.scp ark:- ark:- | add-deltas --delta-order=1 ark:- ark:-|"	
-    segmentClustering --target_cluster_num=0 --lambda=15 --dist_type=KL2 exp/ref/$x/segments/segments.scp "$feats" exp/clustering/$x/segments exp/clustering/$x/rttms 2>&1 | tee log
-    #segmentClustering  --min-update-segment=20 --lambda=15 --dist_type=GLR exp/ref/$x/segments/segments.scp "$feats" exp/clustering/$x/segments exp/clustering/$x/rttms 2>&1 | tee log
+    #segmentClustering --target_cluster_num=0 --lambda=15 --dist_type=KL2 exp/ref/$x/segments/segments.scp "$feats" exp/clustering/$x/segments exp/clustering/$x/rttms 2>&1 | tee log
+    segmentClustering  --lambda=1 --dist_type=GLR exp/ref/$x/segments/segments.scp "$feats" exp/clustering/$x/segments exp/clustering/$x/rttms 2>&1 | tee log
     
     log_end "Bottom Up Clustering"
 }

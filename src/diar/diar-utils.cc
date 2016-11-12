@@ -232,6 +232,7 @@ void ComputeIvector(const Matrix<BaseFloat>& feats, const Posterior& posteriors,
                                              need_2nd_order_stats);
     utt_stats.AccStats(feats, posteriors);
     ivector_mean.Resize(extractor.IvectorDim());
+    ivector_covar.Resize(extractor.IvectorDim());
     ivector_mean(0) = extractor.PriorOffset();
     extractor.GetIvectorDistribution(utt_stats, &ivector_mean, &ivector_covar);
 }

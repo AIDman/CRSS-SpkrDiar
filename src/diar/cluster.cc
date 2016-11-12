@@ -5,6 +5,14 @@
 namespace kaldi {
 
 
+IvectorInfo::IvectorInfo(Matrix<BaseFloat>* feats, Posterior* posteriors, IvectorExtractor* extractor) {
+	this->feats_ = feats;
+	this->posteriors_ = posteriors;
+	this->extractor_ = extractor;
+	return;
+}
+
+
 Cluster::Cluster(Segment one_segment){
 	this->label_ = Cluster::prefix + ToString(Cluster::id_generator++);
 	this->all_segments_.push_back(one_segment);
@@ -175,43 +183,45 @@ void Cluster::CollectPosteriors(const Posterior& posterior, Posterior& cluster_p
 	return;
 }
 
-/*
+
+Vector<double> Cluster::Ivector() {
+	return this->ivector_;
+}
+
+
 void Cluster::SetIvector(Vector<double>& ivect) {
 	this->ivector_ = ivect;
 	return;
 }
 
 
-void Cluster::SetIvector(const Matrix<BaseFloat>& feats, 
-						   const Posterior& posterior, 
-						   const IvectorExtractor& extractor) {
-	// post probs of segment
- 	Posterior::const_iterator start_iter = posterior.begin() + this->start_;
-	Posterior::const_iterator end_iter = posterior.begin() + this->end_ + 1;
-	Posterior seg_posterior(start_iter, end_iter);
+void Cluster::SetIvector(Vector<double>& ivect, SpMatrix<double>& ivect_covar) {
+	this->ivector_ = ivect;
+	this->ivector_covar_ = ivect_covar;
+	return;
+}
 
-	// feature of segment
-	int32 dim = feats.NumCols();
-	int32 nframes = this->end_ - this->start_ + 1;
-	Matrix<BaseFloat> seg_feats(nframes, dim);
-	int insert_pos = 0;
-	for(int32 idx = this->start_; idx <= this->end_; idx++) {
-		seg_feats.Row(insert_pos).CopyFromVec(feats.Row(idx));
-		insert_pos++;
-	}
 
-	// ivector extraction
-    bool need_2nd_order_stats = false;
-    IvectorExtractorUtteranceStats utt_stats(extractor.NumGauss(),
-                                             extractor.FeatDim(),
-                                             need_2nd_order_stats);
-    utt_stats.AccStats(seg_feats, seg_posterior);
-    this->ivector_.Resize(extractor.IvectorDim());
-    this->ivector_(0) = extractor.PriorOffset();
-    extractor.GetIvectorDistribution(utt_stats, &ivector_, NULL);
+void Cluster::SetIvector(IvectorInfo& ivec_info) {
+	// post probs of cluster
+	int32 clst_frms = this->NumFramesAfterMask();
+	Posterior cluster_posteriors(clst_frms);
+	this->CollectPosteriors(*ivec_info.posteriors_, cluster_posteriors);
+
+	// features of cluster
+	int32 dim = (*ivec_info.feats_).NumCols();
+	Matrix<BaseFloat> cluster_feats(clst_frms,dim);
+	this->CollectFeatures(*ivec_info.feats_, cluster_feats);
+
+	Vector<double> ivector_mean;
+	SpMatrix<double> ivector_covar;
+	ComputeIvector(cluster_feats, cluster_posteriors, *ivec_info.extractor_, ivector_mean, ivector_covar);
+	this->ivector_ = ivector_mean;
+	this->ivector_covar_ = ivector_covar;
+
     return;
 }
-*/
+
 
 ClusterCollection::ClusterCollection() {
 	num_clusters_ = 0;
@@ -315,8 +325,6 @@ void ClusterCollection::BottomUpClustering(const Matrix<BaseFloat> &feats, const
 	int32 init_cluster_num = this->num_clusters_;
 	while(this->num_clusters_ > non_updateable + 2) {
 
-
-
 		std::vector<Cluster*> min_dist_clusters(2);
 		FindMinDistClusters(feats, dist_matrix, to_be_updated, cluster_idx_map, min_dist_clusters);
 
@@ -325,10 +333,12 @@ void ClusterCollection::BottomUpClustering(const Matrix<BaseFloat> &feats, const
 
 		BaseFloat dist_glr = DistanceOfTwoClustersGLR(feats, min_dist_clusters[0], min_dist_clusters[1]);
 
+		KALDI_LOG << "Min GLR Distance: " << dist_glr << " Current Cluster Num:" << num_clusters_;
+
 		// Compute the penalty BIC critera
 		int32 dim = feats.NumCols();
-		//int32 tot_frames = this->NumFramesAfterMask();
-		int32 tot_frames = min_dist_clusters[0]->NumFramesAfterMask() + min_dist_clusters[1]->NumFramesAfterMask();
+		//int32 tot_frames = this->NumFramesAfterMask(); 
+		int32 tot_frames = min_dist_clusters[0]->NumFramesAfterMask() + min_dist_clusters[1]->NumFramesAfterMask(); 
 		BaseFloat penalty = 0.5 * (dim + dim) * log(tot_frames);
 		BaseFloat delta_bic = dist_glr - lambda * penalty;
 
@@ -355,9 +365,14 @@ void ClusterCollection::BottomUpClustering(const Matrix<BaseFloat> &feats, const
 	return;
 }
 
-/*
-void ClusterCollection::BottomUpClusteringIvector(const Matrix<BaseFloat> &feats, const Posterior& posterior, const IvectorExtractor& extractor, 
-												const BaseFloat& lambda, int32 target_cluster_num, const int32& dist_type ) {
+
+void ClusterCollection::BottomUpClusteringIvector(IvectorInfo& ivec_info, 
+													const BaseFloat& lambda, 
+													int32 target_cluster_num, 
+													const int32& min_update_len) {
+
+	// Compute I-vector For each cluster
+	this->SetIvector(ivec_info);
 
 	// Give each initial cluster and idx number, to easy manipulation
 	std::unordered_map<Cluster*, int32> cluster_idx_map;
@@ -388,21 +403,21 @@ void ClusterCollection::BottomUpClusteringIvector(const Matrix<BaseFloat> &feats
 	}
 
 	// Compute the penalty BIC critera
-	int32 dim = feats.NumCols();
+	int32 dim = (*ivec_info.feats_).NumCols();
 	int32 tot_frames = this->NumFramesAfterMask();
 	int32 init_cluster_num = this->num_clusters_;
 	BaseFloat penalty = 0.5 * (dim + dim) * log(tot_frames);
 
 	// Start HAC clustering
-	while(this->num_clusters_ > non_update_size + 1) {
+	while(this->num_clusters_ > non_update_size + 2) {
 
 		std::vector<Cluster*> min_dist_clusters(2);
-		FindMinDistClustersIvector(feats, posterior, extractor, to_be_updated, cluster_idx_map, min_dist_clusters);
+		FindMinDistClustersIvector(dist_matrix, to_be_updated, cluster_idx_map, min_dist_clusters);
 
 		if (min_dist_clusters[0]==NULL || min_dist_clusters[1]==NULL) 
 				KALDI_ERR << "NULL CLUSTER!";
 
-		BaseFloat dist_glr = DistanceOfTwoClustersGLR(feats, min_dist_clusters[0], min_dist_clusters[1]);
+		BaseFloat dist_glr = DistanceOfTwoClustersGLR((*ivec_info.feats_), min_dist_clusters[0], min_dist_clusters[1]);
 		BaseFloat delta_bic = dist_glr - lambda * penalty;
 
 		if(delta_bic > 0 || this->num_clusters_ <= target_cluster_num) {
@@ -420,13 +435,44 @@ void ClusterCollection::BottomUpClusteringIvector(const Matrix<BaseFloat> &feats
 			}
 		}
 
+		this->SetIvector(ivec_info);
+
 		this->num_clusters_--;
 	}
+
+	KALDI_LOG << "Cluster Number Reduced From: " << init_cluster_num << " To "<< num_clusters_;
+
 	return;
 }
 
+
+void ClusterCollection::SetIvector(IvectorInfo& ivec_info) {
+	Cluster* curr = this->head_cluster_;
+	Vector<double> ivectors_average(ivec_info.extractor_->IvectorDim());
+	while(curr) {
+		curr->SetIvector(ivec_info);
+		Vector<double> curr_ivector = curr->Ivector();
+
+		// length nomalization
+		BaseFloat norm = curr_ivector.Norm(2.0);
+        BaseFloat ratio = norm / sqrt(curr_ivector.Dim()); // how much larger it is
+        curr_ivector.Scale(1.0 / ratio);
+
+        // compute averge
+        ivectors_average.AddVec(1.0/this->num_clusters_, curr_ivector);
+
+		curr = curr->next;
+	}
+
+	curr = this->head_cluster_;
+	while(curr) {
+		Vector<double> curr_ivector = curr->Ivector();
+		curr_ivector.AddVec(-1.0, ivectors_average);
+		curr->SetIvector(curr_ivector);
+		curr = curr->next;
+	}
 }
-*/
+
 
 void ClusterCollection::FindMinDistClusters(const Matrix<BaseFloat> &feats, std::vector<std::vector<BaseFloat>>& dist_matrix, std::vector<bool>& to_be_updated, 
 	std::unordered_map<Cluster*, int32>& cluster_idx_map, std::vector<Cluster*> &min_dist_clusters) {
@@ -476,8 +522,7 @@ void ClusterCollection::FindMinDistClusters(const Matrix<BaseFloat> &feats, std:
 }
 
 
-void ClusterCollection::FindMinDistClustersIvector(const Matrix<BaseFloat> &feats, const Posterior& posterior, const IvectorExtractor& extractor, 
-	std::vector<std::vector<BaseFloat>>& dist_matrix, std::vector<bool>& to_be_updated, 
+void ClusterCollection::FindMinDistClustersIvector(std::vector<std::vector<BaseFloat>>& dist_matrix, std::vector<bool>& to_be_updated, 
 	std::unordered_map<Cluster*, int32>& cluster_idx_map, std::vector<Cluster*> &min_dist_clusters) {
 
 	if(num_clusters_<2) KALDI_ERR << "Less than two clusters, could not find min dist clusters";
@@ -495,7 +540,7 @@ void ClusterCollection::FindMinDistClustersIvector(const Matrix<BaseFloat> &feat
 				dist = dist_matrix[p1_idx][p2_idx];
 
 			}else{
-				dist = DistanceOfTwoClustersIvectorKL2(feats, p1, p2, posterior, extractor);
+				dist = 1 - cosineDistance(p1->Ivector(), p2->Ivector());
 				dist_matrix[p1_idx][p2_idx] = dist;
 			}
 
@@ -504,7 +549,6 @@ void ClusterCollection::FindMinDistClustersIvector(const Matrix<BaseFloat> &feat
 				min_dist_clusters[0] = p1;
 				min_dist_clusters[1] = p2;
 			}
-
 			p2 = p2->next;
 		}
 		p1 = p1->next;

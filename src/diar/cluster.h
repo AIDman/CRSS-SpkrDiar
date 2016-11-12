@@ -19,6 +19,14 @@ namespace kaldi{
 #define KL2_DISTANCE 1
 #define IVECTOR_DISTANCE 2
 
+class IvectorInfo {
+public:
+	Matrix<BaseFloat>* feats_;
+	Posterior* posteriors_;
+	IvectorExtractor* extractor_;
+	IvectorInfo(Matrix<BaseFloat>* feats, Posterior* posterior, IvectorExtractor* extractor);
+};
+
 class Cluster {
 public:
 	Cluster(Segment one_segment);
@@ -36,10 +44,10 @@ public:
 	void ComputeVarSum(const Matrix<BaseFloat>& feats, Vector<BaseFloat>& var_sum) const;
 	void CollectFeatures(const Matrix<BaseFloat>& feats, Matrix<BaseFloat>& feats_collect) const;
 	void CollectPosteriors(const Posterior& posterior, Posterior& postprobs_collect) const;
+	Vector<double> Ivector();
 	void SetIvector(Vector<double>& ivec);
-	void SetIvector(const Matrix<BaseFloat>& feats, 
-					const Posterior& posteriors, 
-					const IvectorExtractor& extractor);
+	void SetIvector(Vector<double>& ivec, SpMatrix<double>& ivec_covar);
+	void SetIvector(IvectorInfo& ivec_info);
 
 	Cluster* prev;
 	Cluster* next;
@@ -52,6 +60,8 @@ private:
 	std::string label_;
 	int32 frames_;
 	int32 frames_after_mask_;
+	Vector<double> ivector_;
+	SpMatrix<double> ivector_covar_;
 };
 
 
@@ -64,13 +74,23 @@ public:
 	void InitFromNonLabeledSegments(SegmentCollection non_clustered_segmemts);
 	//InitFromLabeledSegments(SegmentCollection);
 	void BottomUpClustering(const Matrix<BaseFloat> &feats, const BaseFloat& lambda = 5.0, int32 target_cluster_num = 0, const int32& dist_type = 0, const int32& min_update_len  = 0);
-	//void BottomUpClusteringIvector(const Matrix<BaseFloat> &feats, const Posterior& posterior, const IvectorExtractor& extractor, const BaseFloat& lambda = 5.0, 
-	//	int32 target_cluster_num = 0, const int32& dist_type = 0);
-	void FindMinDistClusters(const Matrix<BaseFloat> &feats, std::vector<std::vector<BaseFloat> >& dist_matrix, 
-		std::vector<bool>& to_be_updated, std::unordered_map<Cluster*, int32>& cluster_idx_map, std::vector<Cluster*> &min_dist_clusters);
-	void FindMinDistClustersIvector(const Matrix<BaseFloat> &feats, const Posterior& posterior, const IvectorExtractor& extractor, 
-		std::vector<std::vector<BaseFloat> >& dist_matrix, 
-		std::vector<bool>& to_be_updated, std::unordered_map<Cluster*, int32>& cluster_idx_map, std::vector<Cluster*> &min_dist_clusters);
+	void BottomUpClusteringIvector(IvectorInfo& ivec_info, 
+									const BaseFloat& lambda = 5.0, 
+									int32 target_cluster_num = 0, 
+									const int32& min_update_len = 0);
+	void SetIvector(IvectorInfo& ivec_info);
+
+	void FindMinDistClusters(const Matrix<BaseFloat> &feats, 
+							std::vector<std::vector<BaseFloat> >& dist_matrix, 
+							std::vector<bool>& to_be_updated, 
+							std::unordered_map<Cluster*, int32>& cluster_idx_map, 
+							std::vector<Cluster*> &min_dist_clusters);
+
+	void FindMinDistClustersIvector(std::vector<std::vector<BaseFloat> >& dist_matrix, 
+									std::vector<bool>& to_be_updated, 
+									std::unordered_map<Cluster*, int32>& cluster_idx_map, 
+									std::vector<Cluster*> &min_dist_clusters);
+
 	static void MergeClusters(Cluster* clust1, Cluster* clust2);
 	BaseFloat DistanceOfTwoClustersGLR(const Matrix<BaseFloat> &feats, const Cluster* cluster1, const Cluster* cluster2);
 	BaseFloat DistanceOfTwoClustersKL2(const Matrix<BaseFloat> &feats, const Cluster* cluster1, const Cluster* cluster2); 
@@ -86,6 +106,7 @@ private:
 	Cluster* head_cluster_;
 	int32 dist_type_;
 };
+
 
 
 template <typename T>
