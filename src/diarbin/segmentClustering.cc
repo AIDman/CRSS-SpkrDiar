@@ -18,15 +18,15 @@ int main(int argc, char *argv[]) {
 
         int32 target_cluster_num = 0;
         int32 min_update_segment = 0;
-        BaseFloat lambda = FLT_MAX;
-        std::string dist_type = "GLR";
+        BaseFloat lambda = 5.0;
+        std::string dist_type = "KL2";
 
 
         kaldi::ParseOptions po(usage);
         po.Register("target-cluster-num", &target_cluster_num, "Target cluster number as stopping criterion");
         po.Register("min-update-segment", &min_update_segment, "Clustering segments having frames larger than");
         po.Register("lambda", &lambda, "Lambda for BIC computation");
-        po.Register("dist_type", &dist_type, "Distance Type Used For Clustering. Currently Supports GLR, KL2");
+        po.Register("dist-type", &dist_type, "Distance Type Used For Clustering. Currently Supports GLR, KL2");
         po.Read(argc, argv);
 
         if (po.NumArgs() != 4) {
@@ -40,6 +40,13 @@ int main(int argc, char *argv[]) {
                     rttm_outputdir = po.GetArg(4);
 
         RandomAccessBaseFloatMatrixReader feature_reader(feature_rspecifier);
+
+        // Load configuration file
+        DiarConfig config;
+        config.target_cluster_num = target_cluster_num;
+        config.min_update_segment = min_update_segment;
+        config.dist_type = dist_type;
+        config.lambda = lambda;
 
         // read in segments from each file
         Input ki(segments_scpfile);  // no binary argment: never binary.
@@ -56,22 +63,12 @@ int main(int argc, char *argv[]) {
  
             segment_clusters.InitFromNonLabeledSegments(speech_segments);
  
-            if(dist_type == "GLR") {
-                segment_clusters.BottomUpClustering(feats, lambda, target_cluster_num, GLR_DISTANCE, 50);
-                segment_clusters.BottomUpClustering(feats, lambda, target_cluster_num, GLR_DISTANCE, 20);
-                segment_clusters.BottomUpClustering(feats, lambda, target_cluster_num, GLR_DISTANCE, 0);
-            }else if(dist_type == "KL2") {
-                // Scheduled clustering. This is to avoid short segments to srewed up everything.
-                segment_clusters.BottomUpClustering(feats, lambda, target_cluster_num, KL2_DISTANCE, 50);
-                segment_clusters.BottomUpClustering(feats, lambda, target_cluster_num, KL2_DISTANCE, 20);
-                segment_clusters.BottomUpClustering(feats, lambda, target_cluster_num, KL2_DISTANCE, 0);
-            }
+            segment_clusters.BottomUpClustering(feats, config);
 
             segment_clusters.Write(segments_dirname);
 
             segment_clusters.WriteToRttm(rttm_outputdir);
         }
-
     } catch(const std::exception &e) {
         std::cerr << e.what();
         return -1;

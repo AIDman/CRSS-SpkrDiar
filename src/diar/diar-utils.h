@@ -7,6 +7,7 @@
 #include <fstream>
 #include <sstream>
 #include <map>
+#include <cfloat>
 #include "util/common-utils.h"
 #include "matrix/matrix-lib.h"
 #include "hmm/posterior.h"
@@ -22,6 +23,25 @@ namespace kaldi{
 #ifndef FRAMELENGTH
 #define FRAMELENGTH 0.025
 #endif
+
+
+struct DiarConfig {
+	BaseFloat lambda;
+	int32 target_cluster_num;	
+	std::string dist_type;
+	std::string ivector_dist_type;
+	BaseFloat ivector_dist_stop;
+	int32 min_update_segment;
+
+	DiarConfig() {
+		this->dist_type = "KL2";
+		this->lambda = FLT_MAX;
+		this->target_cluster_num = 2;
+		this->ivector_dist_type = "CosineDistance";
+		this->ivector_dist_stop = 1.0; // should between 0 - 1
+		this->min_update_segment = 0;
+	}
+};
 
 
 template<class T>

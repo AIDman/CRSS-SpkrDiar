@@ -15,6 +15,12 @@ num_gselect=20 # Gaussian-selection using diagonal model: number of Gaussians to
 min_post=0.025 # Minimum posterior to use (posteriors below this are pruned out)
 posterior_scale=1.0 # This scale helps to control for successve features being highly
                     # correlated.  E.g. try 0.1 or 0.3.
+
+apply_cmvn_utterance=false
+apply_cmvn_sliding=false
+ivector_dist_stop=0.7
+target_cluster_num=2
+min_update_segment=0
 # End configuration section.
 
 echo "$0 $@"  # Print the command line for logging
@@ -57,7 +63,21 @@ utils/split_data.sh $data $nj || exit 1;
 delta_opts=`cat $extractor_dir/delta_opts 2>/dev/null`
 
 ## Set up features.
-feats="ark,s,cs:copy-feats scp:$data/feats.scp ark:- | apply-cmvn --norm-vars=true scp:$data/cmvn.scp ark:- ark:- | add-deltas $delta_opts scp:$data/feats.scp ark:- |"
+if $apply_cmvn_sliding ; then
+   echo "Sliding CMVN Applied"	
+   feats="ark,s,cs:add-deltas $delta_opts scp:$data/feats.scp ark:- | apply-cmvn-sliding --norm-vars=false --center=true --cmn-window=300 ark:- ark:- |"
+fi
+
+if $apply_cmvn_utterance ; then
+   echo "Utterance level CMVN Applied"	
+   feats="ark,s,cs:copy-feats scp:$data/feats.scp ark:- | apply-cmvn --norm-vars=false scp:$data/cmvn.scp ark:- ark:- | add-deltas $delta_opts ark:- ark:- |"
+fi
+
+if ! $apply_cmvn_sliding  && ! $apply_cmvn_utterance ; then
+   echo "No CMVN Applied"	
+   feats="ark,s,cs:add-deltas $delta_opts scp:$data/feats.scp ark:- |"	
+fi
+
 
 if [ $stage -le 0 ]; then
   echo "$0: extracting iVectors"
@@ -69,7 +89,7 @@ if [ $stage -le 0 ]; then
 	ark,s,cs:- ark:- \| scale-post ark:- $posterior_scale ark,t:$dir/posterior.JOB || exit 1;
 
   $cmd JOB=1:$nj $dir/log/segment_clustering_ivector.JOB.log \
-    segmentClusteringIvector --lambda=5 --ivcds-thr=0.7 $segdir/segments.scp "$feats" ark,s,cs:$dir/posterior.JOB $extractor_dir/final.ie \
+    segmentClusteringIvector --min-update-segment=$min_update_segment --target-cluster-num=$target_cluster_num --ivector-dist-stop=$ivector_dist_stop $segdir/segments.scp "$feats" ark,s,cs:$dir/posterior.JOB $extractor_dir/final.ie \
 	$dir/segments $dir/rttms|| exit 1;
 
 fi

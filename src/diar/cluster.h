@@ -15,16 +15,16 @@
 
 namespace kaldi{
 
-#define GLR_DISTANCE 0
-#define KL2_DISTANCE 1
-#define IVECTOR_DISTANCE 2
-
-class IvectorInfo {
-public:
-	Matrix<BaseFloat>* feats_;
-	Posterior* posteriors_;
-	IvectorExtractor* extractor_;
-	IvectorInfo(Matrix<BaseFloat>* feats, Posterior* posterior, IvectorExtractor* extractor);
+struct IvectorInfo {
+	Matrix<BaseFloat>* feats;
+	Posterior* posteriors;
+	IvectorExtractor* extractor;
+	IvectorInfo(Matrix<BaseFloat>* _feats, Posterior* _posteriors, IvectorExtractor* _extractor) {
+		feats = _feats;
+		posteriors = _posteriors;
+		extractor = _extractor;
+		return;
+	}
 };
 
 class Cluster {
@@ -74,22 +74,21 @@ public:
 	int32 NumFramesAfterMask();
 	void InitFromNonLabeledSegments(SegmentCollection non_clustered_segmemts);
 	//InitFromLabeledSegments(SegmentCollection);
-	void BottomUpClustering(const Matrix<BaseFloat> &feats, const BaseFloat& lambda = 5.0, int32 target_cluster_num = 0, const int32& dist_type = 0, const int32& min_update_len  = 0);
-	void BottomUpClusteringIvector(IvectorInfo& ivec_info, 
-									const BaseFloat& dist_thr = 1.0, 
-									int32 target_cluster_num = 0, 
-									const int32& min_update_len = 0);
+	void BottomUpClustering(const Matrix<BaseFloat> &feats, const DiarConfig& config);
+	void BottomUpClusteringIvector(IvectorInfo& ivec_info, const DiarConfig& config);
 	void SetIvector(IvectorInfo& ivec_info);
 	void ComputeIvectorMean(Vector<double>& ivectors_average);
 	void NormalizeIvectors(Vector<double>& ivectors_average);
 
-	void FindMinDistClusters(const Matrix<BaseFloat> &feats, 
+	void FindMinDistClusters(const Matrix<BaseFloat> &feats,
+							const DiarConfig& config, 
 							std::vector<std::vector<BaseFloat> >& dist_matrix, 
 							std::vector<bool>& to_be_updated, 
 							std::unordered_map<Cluster*, int32>& cluster_idx_map, 
 							std::vector<Cluster*> &min_dist_clusters);
 
-	BaseFloat FindMinDistClustersIvector(std::vector<std::vector<BaseFloat> >& dist_matrix, 
+	BaseFloat FindMinDistClustersIvector(const DiarConfig& config,
+									std::vector<std::vector<BaseFloat> >& dist_matrix, 
 									std::vector<bool>& to_be_updated, 
 									std::unordered_map<Cluster*, int32>& cluster_idx_map, 
 									std::vector<Cluster*> &min_dist_clusters);
@@ -107,7 +106,6 @@ private:
 	string uttid_;
 	int32 num_clusters_;
 	Cluster* head_cluster_;
-	int32 dist_type_;
 };
 
 

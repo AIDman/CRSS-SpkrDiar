@@ -10,8 +10,6 @@
 namespace kaldi {
 
 
-
-
 BaseFloat FrameIndexToSeconds(int32 frame) {
 	// Find corresponding start point (in seconds) of a given frame.
 	return frame*FRAMESHIFT;

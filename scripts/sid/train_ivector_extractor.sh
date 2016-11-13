@@ -42,6 +42,8 @@ cleanup=true
 posterior_scale=1.0 # This scale helps to control for successve features being highly
                     # correlated.  E.g. try 0.1 or 0.3
 sum_accs_opt=
+apply_cmvn_utterance=false
+apply_cmvn_sliding=false
 # End configuration section.
 
 echo "$0 $@"  # Print the command line for logging
@@ -93,9 +95,21 @@ fi
 #parallel_opts="-pe smp $[$num_threads*$num_processes]"
 parallel_opts=""
 ## Set up features.
-#feats="ark,s,cs:add-deltas $delta_opts scp:$sdata/JOB/feats.scp ark:- | apply-cmvn-sliding --norm-vars=false --center=true --cmn-window=300 ark:- ark:- | select-voiced-frames ark:- scp,s,cs:$sdata/JOB/vad.scp ark:- |"
-#feats="ark,s,cs:add-deltas $delta_opts scp:$sdata/JOB/feats.scp ark:- | apply-cmvn-sliding --norm-vars=false --center=true --cmn-window=300 ark:- ark:- |"
-feats="ark,s,cs:copy-feats scp:$data/feats.scp ark:- | apply-cmvn --norm-vars=true scp:$data/cmvn.scp ark:- ark:- | add-deltas $delta_opts scp:$data/feats.scp ark:- | select-voiced-frames ark:- scp,s,cs:$data/vad.scp ark:- |"
+if $apply_cmvn_sliding ; then
+   echo "Sliding CMVN Applied"	
+   feats="ark,s,cs:add-deltas $delta_opts scp:$data/feats.scp ark:- | apply-cmvn-sliding --norm-vars=false --center=true --cmn-window=300 ark:- ark:- | select-voiced-frames ark:- scp,s,cs:$data/vad.scp ark:- |"
+fi
+
+if $apply_cmvn_utterance ; then
+   echo "Utterance level CMVN Applied"	
+   feats="ark,s,cs:copy-feats scp:$data/feats.scp ark:- | apply-cmvn --norm-vars=false scp:$data/cmvn.scp ark:- ark:- | add-deltas $delta_opts ark:- ark:- | select-voiced-frames ark:- scp,s,cs:$data/vad.scp ark:- |"
+fi
+
+if ! $apply_cmvn_sliding  && ! $apply_cmvn_utterance ; then
+   echo "No CMVN Applied"	
+   feats="ark,s,cs:add-deltas $delta_opts scp:$data/feats.scp ark:- | select-voiced-frames ark:- scp,s,cs:$data/vad.scp ark:- |"	
+fi
+
 
 # Initialize the i-vector extractor using the FGMM input
 if [ $stage -le -2 ]; then

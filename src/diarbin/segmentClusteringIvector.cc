@@ -14,18 +14,18 @@ int main(int argc, char *argv[]) {
         typedef kaldi::int32 int32;
         using namespace kaldi;
 
-        const char *usage = "Bottom Up clustering on segments, initial clustering using GLR, BIC. \n";
+        const char *usage = "Bottom Up clustering on segments based on i-vector. \n";
 
+        int32 min_update_segment = 0;
         int32 target_cluster_num = 0;
-        BaseFloat lambda = FLT_MAX;
-        BaseFloat ivcds_thr = 1.0;
-        std::string dist_type = "GLR";
+        BaseFloat ivector_dist_stop = 1.0;
+        std::string ivector_dist_type = "CosineDistance";
 
         kaldi::ParseOptions po(usage);
+        po.Register("min-update-segment", &min_update_segment, "Clustering segments having frames larger than");
         po.Register("target-cluster_num", &target_cluster_num, "Target cluster number as stopping criterion");
-        po.Register("lambda", &lambda, "Lambda for BIC computation");
-        po.Register("ivcds-thr", &ivcds_thr, "Ivector CDS distance threshold");
-        po.Register("dist-type", &dist_type, "Distance Type Used For Clustering. Currently Supports GLR, KL2");
+        po.Register("ivector-dist-stop", &ivector_dist_stop, "Ivector distance threshold af stopping crierion");
+        po.Register("ivector-dist-type", &ivector_dist_type, "Ivector Distance Type For Clustering. e.g., CosineDistance");
         po.Read(argc, argv);
 
         if (po.NumArgs() != 6) {
@@ -44,6 +44,13 @@ int main(int argc, char *argv[]) {
         RandomAccessPosteriorReader posterior_reader(posterior_rspecifier);
         IvectorExtractor extractor;
         ReadKaldiObject(ivector_extractor_rxfilename, &extractor);
+
+        // Load configuration file
+        DiarConfig config;
+        config.min_update_segment = min_update_segment;
+        config.target_cluster_num = target_cluster_num;
+        config.ivector_dist_type = ivector_dist_type;
+        config.ivector_dist_stop = ivector_dist_stop;
 
         // read in segments from each file
         Input ki(segments_scpfile);  // no binary argment: never binary.
@@ -66,9 +73,7 @@ int main(int argc, char *argv[]) {
 
             segment_clusters.InitFromNonLabeledSegments(speech_segments);
  
-            //segment_clusters.BottomUpClustering(feats, lambda, target_cluster_num, KL2_DISTANCE, 50);
-            //segment_clusters.BottomUpClusteringIvector(ivec_info, ivcds_thr, target_cluster_num, 50);
-            segment_clusters.BottomUpClusteringIvector(ivec_info, ivcds_thr, target_cluster_num, 0);
+            segment_clusters.BottomUpClusteringIvector(ivec_info, config);
             
             segment_clusters.Write(segments_dirname);
 

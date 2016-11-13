@@ -17,7 +17,8 @@ log_end(){
 
 set -e # exit on error
 
-data="demo" # data for diarization
+#data="demo" # data for diarization
+data="is_sessions_file_1" # data for diarization
 data_dev="is_sessions"  # dev_data is for UBM, TV matrix training for i-vector
 
 run_mfcc(){
@@ -31,7 +32,7 @@ run_mfcc(){
 
     log_end "Extract MFCC features"
 }
-run_mfcc 
+#run_mfcc 
 
 
 run_vad(){
@@ -54,30 +55,23 @@ make_ref(){
 
     log_end "Generate Reference Segments/Labels/RTTM files"
 }
-make_ref 
+#make_ref 
 
 train_extractor(){
     ubmdim=256
     ivdim=32
 
-    sid/train_diag_ubm.sh --parallel-opts "" --nj 1 --cmd "$train_cmd" data/$data_dev ${ubmdim} \
-    exp/diag_ubm_${ubmdim} || exit 1;
+    sid/train_diag_ubm.sh --parallel-opts "" --nj 1 --apply-cmvn-utterance false --apply-cmvn-sliding false \
+    	 		--cmd "$train_cmd" data/$data_dev ${ubmdim} exp/diag_ubm_${ubmdim} || exit 1;
 
-    sid/train_full_ubm.sh --nj 1 --cmd "$train_cmd" data/$data_dev \
-       exp/diag_ubm_${ubmdim} exp/full_ubm_${ubmdim} || exit 1;
+    sid/train_full_ubm.sh --nj 1 --apply-cmvn-utterance false --apply-cmvn-sliding false \
+			--cmd "$train_cmd" data/$data_dev exp/diag_ubm_${ubmdim} exp/full_ubm_${ubmdim} || exit 1;
 
     sid/train_ivector_extractor.sh --nj 1 --cmd "$train_cmd" --num-gselect 15 \
       --ivector-dim $ivdim --num-iters 5 exp/full_ubm_${ubmdim}/final.ubm data/$data_dev \
       exp/extractor_$ubmdim || exit 1;
 }
 #train_extractor
-
-test_ivectors(){
-
-    diar/test_ivector_score.sh --nj 1 exp/extractor_256 data/$data exp/ref/$data/labels exp/temp/test_ivectors 
-}
-#test_ivectors
-
 
 bottom_up_clustering(){
     log_start "Bottom Up Clustering With Ivector"
