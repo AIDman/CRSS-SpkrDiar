@@ -16,12 +16,12 @@ As long as it is ready, we will include installation guidance and the recipe to
 reproduce our results._
 
 ### Current Stage of Development
-##### Completed:
+##### _Completed:_
  - Bottom-Up Clustering Using BIC, Symmetric KL divergence
  - Bottom-Up Clustering Using i-vector cosine distance score (CDS).
  - ILP Clustering with i-vector CDS as distance.
 
-##### To Be Completed:
+##### _To Be Completed:_
  - Test and incorporate PLDA, Conditional Bayes, Mahalanobis distance for clustering    
  - Sementation
  - Supervised/Semeisupervised Diarization
