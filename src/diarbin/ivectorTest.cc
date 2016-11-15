@@ -76,7 +76,7 @@ int main(int argc, char *argv[]) {
 
         // compute mean of ivectors
         Vector<double> total_mean;
-        computeMean(ivector_collect, total_mean);
+        ComputeMean(ivector_collect, total_mean);
 
         // Mean Normalization & length Normalization
         for (size_t k = 0; k<speech_segments.Size(); k++) {

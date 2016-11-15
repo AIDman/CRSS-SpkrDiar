@@ -86,8 +86,7 @@ bottom_up_clustering
 bottom_up_clustering_der(){
 	
     diar/compute_DER.sh --sanity_check false exp/ref/$data/rttms exp/clustering_ivector_s2/$data/rttms exp/result_DER/$data	
-    grep OVERALL exp/result_DER/$data/*.der		
-
+    grep OVERALL exp/result_DER/$data/*.der && grep OVERALL exp/result_DER/$data/*.der | awk '{ sum += $7; n++ } END { if (n > 0) print "Avergage: " sum / n; }'
 }
 bottom_up_clustering_der
 

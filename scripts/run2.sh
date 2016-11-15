@@ -17,15 +17,16 @@ log_end(){
 
 set -e # exit on error
 
-data="demo" # data for diarization
-#data="is_sessions_file_1" # data for diarization
+ami_annotated_segment=/home/chengzhu/work/SpeechCorpus/ami_dir/segments
+session="demo" # data for diarization
+#session="is_sessions_file_1" # data for diarization
 data_dev="is_sessions"  # dev_data is for UBM, TV matrix training for i-vector
 
 run_mfcc(){
     log_start "Extract MFCC features"
 
     mfccdir=mfcc
-    for x in $data; do
+    for x in $session $data_dev ; do
       steps/make_mfcc.sh --cmd "$train_cmd" --nj 1 data/$x exp/make_mfcc/$x $mfccdir || exit 1;
       steps/compute_cmvn_stats.sh data/$x exp/make_mfcc/$x $mfccdir || exit 1;
     done
@@ -43,19 +44,17 @@ run_vad(){
     done
     log_end "Finish VAD"
 }
-#run_vad
+run_vad
 
 
 make_ref(){
     log_start "Generate Reference Segments/Labels/RTTM files"
 
-    ami_annotated_segment=/home/chengzhu/work/SpeechCorpus/ami_dir/segments
-
-    local/make_ami_ref.sh data/$data $ami_annotated_segment exp/ref/$x
+    local/make_ami_ref.sh data/$session $ami_annotated_segment exp/ref/$session
 
     log_end "Generate Reference Segments/Labels/RTTM files"
 }
-#make_ref 
+make_ref 
 
 train_extractor(){
     ubmdim=256
@@ -71,12 +70,12 @@ train_extractor(){
       --ivector-dim $ivdim --num-iters 5 exp/full_ubm_${ubmdim}/final.ubm data/$data_dev \
       exp/extractor_$ubmdim || exit 1;
 }
-#train_extractor
+train_extractor
 
 bottom_up_clustering(){
     log_start "Bottom Up Clustering With Ivector"
 
-    diar/segment_clustering_ivector.sh --nj 1 --use-segment-label false --ivector-dist-stop 0.7 exp/ref/$data/segments exp/extractor_256 data/$data exp/clustering_ivector/$data	
+    diar/segment_clustering_ivector.sh --nj 1 --use-segment-label false --ivector-dist-stop 0.7 exp/ref/$session/segments exp/extractor_256 data/$session exp/clustering_ivector/$session	
     
     log_end "Bottom Up Clustering With Ivector"
 }
@@ -84,9 +83,8 @@ bottom_up_clustering
 
 bottom_up_clustering_der(){
 	
-    diar/compute_DER.sh --sanity_check false exp/ref/$data/rttms exp/clustering_ivector/$data/rttms exp/result_DER/$data	
-    grep OVERALL exp/result_DER/$data/*.der		
-
+    diar/compute_DER.sh --sanity_check false exp/ref/$session/rttms exp/clustering_ivector/$session/rttms exp/result_DER/$session	
+    grep OVERALL exp/result_DER/$session/*.der && grep OVERALL exp/result_DER/$session/*.der | awk '{ sum += $7; n++ } END { if (n > 0) print "Avergage: " sum / n; }'
 }
 bottom_up_clustering_der
 

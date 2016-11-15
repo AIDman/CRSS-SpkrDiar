@@ -17,55 +17,49 @@ log_end(){
 
 set -e # exit on error
 
-#data="demo"
-data="is_sessions_file_1"
+
+ami_annotated_segment=/home/chengzhu/work/SpeechCorpus/ami_dir/segments
+session="demo"
+#session="is_sessions_file_1"
+
 run_mfcc(){
     log_start "Extract MFCC features"
 
     mfccdir=mfcc
-    datadir=$1
-    for x in $datadir; do
+    for x in $session; do
       steps/make_mfcc.sh --cmd "$train_cmd" --nj 1 data/$x exp/make_mfcc/$x $mfccdir || exit 1;
-      steps/compute_cmvn_stats.sh data/$x exp/make_mfcc/$x $mfccdir || exit 1;
+      steps/compute_cmvn_stats.sh data/$session exp/make_mfcc/$x $mfccdir || exit 1;
     done
 
     log_end "Extract MFCC features"
 }
-run_mfcc $data
+#run_mfcc
 
 
 make_ref(){
     log_start "Generate Reference Segments/Labels/RTTM files"
 
-    ami_annotated_segment=/home/chengzhu/work/SpeechCorpus/ami_dir/segments
-
-    x=$1
-    local/make_ami_ref.sh data/$x $ami_annotated_segment exp/ref/$x
+    local/make_ami_ref.sh data/$session $ami_annotated_segment exp/ref/$session
 
     log_end "Generate Reference Segments/Labels/RTTM files"
 }
-make_ref $data 
+#make_ref 
 
 
 bottom_up_clustering(){
     log_start "Bottom Up Clustering"
 
-    x=$1	
-
-    diar/segment_clustering.sh --nj 1  exp/ref/$x/segments data/$x exp/clustering/$x
+    diar/segment_clustering.sh --nj 1 --lambda 15 exp/ref/$session/segments data/$session exp/clustering/$session
     
     log_end "Bottom Up Clustering"
 }
-bottom_up_clustering $data
+bottom_up_clustering
 
-bottom_up_clustering_der(){
-     		
-    x=$1
+compute_der(){
 	
-    diar/compute_DER.sh --sanity_check false exp/ref/$x/rttms exp/clustering/$x/rttms exp/result_DER/$x	
-    grep OVERALL exp/result_DER/$x/*.der		
-
+    diar/compute_DER.sh --sanity_check false exp/ref/$session/rttms exp/clustering/$session/rttms exp/result_DER/$session	
+    grep OVERALL exp/result_DER/$session/*.der && grep OVERALL exp/result_DER/$session/*.der | awk '{ sum += $7; n++ } END { if (n > 0) print "Avergage: " sum / n; }'
 }
-bottom_up_clustering_der $data
+compute_der
 
 

@@ -17,7 +17,8 @@ log_end(){
 
 set -e # exit on error
 
-data="demo" # data for diarization
+ami_annotated_segment=/home/chengzhu/work/SpeechCorpus/ami_dir/segments
+session="demo" # data for diarization
 #data="is_sessions_file_1" # data for diarization
 data_dev="is_sessions"  # dev_data is for UBM, TV matrix training for i-vector
 
@@ -49,9 +50,7 @@ run_vad(){
 make_ref(){
     log_start "Generate Reference Segments/Labels/RTTM files"
 
-    ami_annotated_segment=/home/chengzhu/work/SpeechCorpus/ami_dir/segments
-
-    local/make_ami_ref.sh data/$data $ami_annotated_segment exp/ref/$x
+    local/make_ami_ref.sh data/$data $ami_annotated_segment exp/ref/$session
 
     log_end "Generate Reference Segments/Labels/RTTM files"
 }
@@ -77,7 +76,7 @@ bottom_up_clustering(){
     log_start "Bottom Up Clustering With Ivector"
 
     diar/segment_clustering_ivector.sh --nj 1 --apply-cmvn-utterance false --apply-cmvn-sliding false \
-       --ivector-dist-stop 0.7 exp/ref/$data/segments exp/extractor_256 data/$data exp/clustering_ivector/$data
+       --ivector-dist-stop 0.7 exp/ref/$session/segments exp/extractor_256 data/$session exp/clustering_ivector/$session
 
     log_end "Bottom Up Clustering With Ivector"
 }
@@ -87,9 +86,9 @@ ilp_clustering(){
     log_start "ILP Clustering With Ivector"
 
     diar/construct_ilp_problem.sh --nj 1 --use-segment-label true --delta 0.5 --apply-cmvn-utterance false --apply-cmvn-sliding false \
-	exp/clustering_ivector/$data/segments exp/extractor_256 data/$data exp/clustering_ilp/$data	
+	exp/clustering_ivector/$session/segments exp/extractor_256 data/$session exp/clustering_ilp/$session	
 
-    diar/ilp_clustering.sh --use-segment-label true exp/clustering_ivector/$data/segments exp/clustering_ilp/$data	
+    diar/ilp_clustering.sh --use-segment-label true exp/clustering_ivector/$session/segments exp/clustering_ilp/$session	
 
     log_end "ILP Clustering With Ivector"
 }
@@ -97,9 +96,8 @@ ilp_clustering
 
 compute_der(){
 	
-    diar/compute_DER.sh --sanity_check false exp/ref/$data/rttms exp/clustering_ilp/$data/rttms exp/result_DER/$data	
-    grep OVERALL exp/result_DER/$data/*.der		
-
+    diar/compute_DER.sh --sanity_check false exp/ref/$session/rttms exp/clustering_ilp/$session/rttms exp/result_DER/$session	
+    grep OVERALL exp/result_DER/$session/*.der && grep OVERALL exp/result_DER/$session/*.der | awk '{ sum += $7; n++ } END { if (n > 0) print "Avergage: " sum / n; }'
 }
 compute_der
 

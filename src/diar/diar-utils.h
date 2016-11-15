@@ -54,7 +54,7 @@ std::string numberToString(T number){
 
 
 template<class T>
-SpMatrix<T> computeCovariance(const std::vector< Vector<T> >& vectorOfFeatures, 
+SpMatrix<T> ComputeCovariance(const std::vector< Vector<T> >& vectorOfFeatures, 
 								   const Vector<T>& mean) {
 	// Compute covariance (sparse matrix) of vector of features. 
 	size_t N = vectorOfFeatures.size(); 
@@ -77,7 +77,7 @@ void ComputeCovariance(const std::vector< Vector<T> >& vectorOfFeatures, SpMatri
 	int32 dim = vectorOfFeatures[0].Dim(); // doesn't matter which vectorOfFeatures[i] we use.
 
 	Vector<T> mean(dim);
-	computeMean(vectorOfFeatures, mean);
+	ComputeMean(vectorOfFeatures, mean);
 
 	Matrix<T> matrixOfFeatures(N,dim);
 	for (size_t i = 0; i < N; i++) {
@@ -91,7 +91,7 @@ void ComputeCovariance(const std::vector< Vector<T> >& vectorOfFeatures, SpMatri
 
 
 template<class T>
-SpMatrix<T> computeWithinCovariance(const std::vector< Vector<T> >& vectorOfFeatures,
+SpMatrix<T> ComputeWithinCovariance(const std::vector< Vector<T> >& vectorOfFeatures,
 									const std::vector<std::string>& vectorOfLabels) {
 	// Calculate: W  = (1/N) Sum_{s=1}_{S} Sum_{i=1}_{Ns} (w_i - m_s)((w_i - m_s)^T)
 	// inputs include development i-vectors and a vector of the same length
@@ -153,7 +153,7 @@ SpMatrix<T> computeWithinCovariance(const std::vector< Vector<T> >& vectorOfFeat
 
 
 template <class T>
-T logDetCovariance(Matrix<T>& data) {
+T LogDetCovariance(Matrix<T>& data) {
 	// Calculates the covariance of data and returns its 
 	// determinant, assuming a diagonal covariance matrix.
 	int32 numFrames = data.NumRows();
@@ -173,27 +173,8 @@ T logDetCovariance(Matrix<T>& data) {
 }
 
 
-/*
-template <class T>
-T logDetCovariance(Matrix<T>& data) {
-	// Calculates the covariance of data and returns its 
-	// determinant, assuming a diagonal covariance matrix.
-	int32 numFrames = data.NumRows();
-	int32 dim = data.NumCols();
-
-	SpMatrix<T> total_cov(dim);
-	total_cov.AddMat2(1.0, data, kTrans, 1.0);
-	total_cov.Scale(1.0 / numFrames);
-	T log_det = total_cov.LogDet();
-	//Vector<BaseFloat> feats_average(dim);
-	//feats_average.AddRowSumMat(1.0 / numFrames, data);
-
-	return log_det;
-}
-*/
-
 template<class T>
-void computeMean(const std::vector< Vector<T> >& vectorOfFeatures,
+void ComputeMean(const std::vector< Vector<T> >& vectorOfFeatures,
 				 Vector<T>& mean) {
 	// Compute mean vector of features. 
 	size_t N = vectorOfFeatures.size();
@@ -215,10 +196,6 @@ int32 SecondsToFrameIndex(T timeStamp) {
 } 
  
 
-std::string makeSegKey(const std::vector<int32>& segmentStartEnd, 
-						const std::string uttid);
-
-
 std::vector<std::string>& split(const std::string& s, 
 								char delim, 
 								std::vector<std::string>& elems);
@@ -227,16 +204,12 @@ std::vector<std::string>& split(const std::string& s,
 std::vector<std::string> split(const std::string& s, char delim);
 
 
-std::vector<std::string> returnNonEmptyFields(const std::vector<std::string>& fields);
+std::vector<std::string> ReturnNonEmptyFields(const std::vector<std::string>& fields);
 
 // compute distant matrix from i-vector collections, return distant matrix;
 void ComputeDistanceMatrix(const std::vector< Vector<double> >& vector_list, 
 							Matrix<BaseFloat>& distance_matrix);
 
-void computeDistanceMatrix(const std::vector< Vector<double> >& vectorList, 
-							Matrix<BaseFloat>& distanceMatrix,
-							const std::vector< Vector<double> >& backgroundIvectors,
-							const std::vector< std::string >& backgroundIvectorLabels);
 
 // compute the Mahalanobis distance between two i-vectors
 BaseFloat MahalanobisDistance(const Vector<double>& v1, const Vector<double>& v2, 
@@ -244,6 +217,13 @@ BaseFloat MahalanobisDistance(const Vector<double>& v1, const Vector<double>& v2
 
 // compute the cosine distance between two i-vectors
 BaseFloat CosineDistance(const Vector<double>& v1, const Vector<double>& v2);
+
+/*
+void computeDistanceMatrix(const std::vector< Vector<double> >& vectorList, 
+							Matrix<BaseFloat>& distanceMatrix,
+							const std::vector< Vector<double> >& backgroundIvectors,
+							const std::vector< std::string >& backgroundIvectorLabels);
+
 
 // Mahalanobis Distance using a averaged within-class covariance (assumes homoscedasticity)
 BaseFloat conditionalBayesDistance(const Vector<double>& v1, const Vector<double>& v2, 
@@ -257,7 +237,7 @@ void estimatePLDA(std::vector< Vector<double> > backgroundIvectors,
 				  Plda& plda);
 
 BaseFloat sigmoidRectifier(BaseFloat logLikelihoodRatio);
-
+*/
 
 BaseFloat SymetricKlDistance(const Vector<BaseFloat>& mean_vec_1, const Vector<BaseFloat>& mean_vec_2,
 								const Vector<BaseFloat>& cov_vec_1, const Vector<BaseFloat>& cov_vec_2);

@@ -157,7 +157,7 @@ std::vector<std::string> GlpkILP::ReadGlpkSolution(std::string glpkSolutionFile)
     while (std::getline(fin, line)){
         if (line.find("*") != std::string::npos){
             std::vector<std::string> fields = split(line, ' ');
-            std::vector<string> nonEmptyFields = returnNonEmptyFields(fields);
+            std::vector<string> nonEmptyFields = ReturnNonEmptyFields(fields);
             std::vector<int32> varIndex = VarNameToIndex(nonEmptyFields[1]);
             int32 k = varIndex[0];
             int32 j = varIndex[1];

@@ -15,23 +15,6 @@ BaseFloat FrameIndexToSeconds(int32 frame) {
 	return frame*FRAMESHIFT;
 }
 
-/*
-std::string makeSegKey(const std::vector<int32>& segmentStartEnd, 
-				const std::string uttid) { 
-	// Make unique key for each segment of each utterance, by concatenating uttid with segment start and end
-	// Such that the key is format of "uttid_segStartFrame_segEndFrame".
-	std::string segStartEndString;
-	std::stringstream tmp; 
-	tmp << segmentStartEnd[0];
-	tmp << "_";
-	tmp << segmentStartEnd[1];
-	segStartEndString = tmp.str();
-	std::string	segID = uttid + "_" + segStartEndString;
-
-	return segID;       
-}
-*/
-
 
 std::vector<std::string>& split(const std::string& s, 
 								char delim, 
@@ -56,7 +39,7 @@ std::vector<std::string> split(const std::string& s, char delim) {
 }
 
 
-std::vector<std::string> returnNonEmptyFields(const std::vector<std::string>& fields) {
+std::vector<std::string> ReturnNonEmptyFields(const std::vector<std::string>& fields) {
 	// Return non empty elements of vector of strings.
 	std::vector<std::string> nonEmptyFields; 
 	for(size_t i = 0; i < fields.size(); i++){
@@ -86,6 +69,35 @@ void ComputeDistanceMatrix(const std::vector< Vector<double> >& vector_list,
 }
 
 
+BaseFloat MahalanobisDistance(const Vector<double>& v1, const Vector<double>& v2, 
+							  const SpMatrix<double>& cov) {
+
+	Vector<double> iv1(v1.Dim());
+	iv1.CopyFromVec(v1);
+	Vector<double> iv2(v2.Dim());
+	iv2.CopyFromVec(v2);
+	SpMatrix<double> Sigma(v2.Dim());
+	Sigma.CopyFromSp(cov);
+	Sigma.Invert();
+	iv1.AddVec(-1.,iv2);
+
+	// Now, calculate the quadratic term: (iv1 - iv2)^T Sigma (iv1-iv2)
+	Vector<double> S_iv1(iv1.Dim());
+	S_iv1.SetZero();
+	S_iv1.AddSpVec(1.0, Sigma, iv1, 0.0);
+	return sqrt(VecVec(iv1, iv1));
+}
+
+
+BaseFloat CosineDistance(const Vector<double>& v1, const Vector<double>& v2) {
+	 BaseFloat dotProduct = VecVec(v1, v2);
+	 BaseFloat norm1 = VecVec(v1, v1) + FLT_EPSILON;
+	 BaseFloat norm2 = VecVec(v2, v2) + FLT_EPSILON;
+
+	 return dotProduct / (sqrt(norm1)*sqrt(norm2));  
+}
+
+/*
 void computeDistanceMatrix(const std::vector< Vector<double> >& vectorList, 
 							Matrix<BaseFloat>& distanceMatrix,
 							const std::vector< Vector<double> >& backgroundIvectors,
@@ -119,35 +131,6 @@ void computeDistanceMatrix(const std::vector< Vector<double> >& vectorList,
 			}
 		}
 	}
-}
-
-
-BaseFloat MahalanobisDistance(const Vector<double>& v1, const Vector<double>& v2, 
-							  const SpMatrix<double>& cov) {
-
-	Vector<double> iv1(v1.Dim());
-	iv1.CopyFromVec(v1);
-	Vector<double> iv2(v2.Dim());
-	iv2.CopyFromVec(v2);
-	SpMatrix<double> Sigma(v2.Dim());
-	Sigma.CopyFromSp(cov);
-	Sigma.Invert();
-	iv1.AddVec(-1.,iv2);
-
-	// Now, calculate the quadratic term: (iv1 - iv2)^T Sigma (iv1-iv2)
-	Vector<double> S_iv1(iv1.Dim());
-	S_iv1.SetZero();
-	S_iv1.AddSpVec(1.0, Sigma, iv1, 0.0);
-	return sqrt(VecVec(iv1, iv1));
-}
-
-
-BaseFloat CosineDistance(const Vector<double>& v1, const Vector<double>& v2) {
-	 BaseFloat dotProduct = VecVec(v1, v2);
-	 BaseFloat norm1 = VecVec(v1, v1) + FLT_EPSILON;
-	 BaseFloat norm2 = VecVec(v2, v2) + FLT_EPSILON;
-
-	 return dotProduct / (sqrt(norm1)*sqrt(norm2));  
 }
 
 
@@ -218,7 +201,7 @@ BaseFloat sigmoidRectifier(BaseFloat logLikelihoodRatio) {
 	// distances and vice-versa. 
 	return Exp(-logLikelihoodRatio)/(1. + Exp(-logLikelihoodRatio));
 }
-
+*/
 
 BaseFloat SymetricKlDistance(const Vector<BaseFloat>& mean_vec_1, const Vector<BaseFloat>& mean_vec_2,
 												const Vector<BaseFloat>& cov_vec_1, const Vector<BaseFloat>& cov_vec_2) {

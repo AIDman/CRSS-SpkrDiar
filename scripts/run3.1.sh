@@ -17,7 +17,9 @@ log_end(){
 
 set -e # exit on error
 
-data="demo" # data for diarization
+ami_annotated_segment=/home/chengzhu/work/SpeechCorpus/ami_dir/segments
+
+session="demo" # data for diarization
 #data="is_sessions_file_1" # data for diarization
 data_dev="is_sessions"  # dev_data is for UBM, TV matrix training for i-vector
 
@@ -49,9 +51,7 @@ run_vad(){
 make_ref(){
     log_start "Generate Reference Segments/Labels/RTTM files"
 
-    ami_annotated_segment=/home/chengzhu/work/SpeechCorpus/ami_dir/segments
-
-    local/make_ami_ref.sh data/$data $ami_annotated_segment exp/ref/$x
+    local/make_ami_ref.sh data/$data $ami_annotated_segment exp/ref/$session
 
     log_end "Generate Reference Segments/Labels/RTTM files"
 }
@@ -76,8 +76,8 @@ train_extractor(){
 bottom_up_clustering(){
     log_start "Bottom Up Clustering With Ivector"
 
-    diar/segment_clustering.sh --nj 1 --lambda 1 exp/ref/$data/segments data/$data exp/clustering/$data	
-    diar/segment_clustering_ivector.sh --nj 1 --use-segment-label true --ivector-dist-stop 0.7 exp/clustering/$data/segments exp/extractor_256 data/$data exp/clustering_ivector/$data	
+    diar/segment_clustering.sh --nj 1 --lambda 1 exp/ref/$session/segments data/$session exp/clustering/$session	
+    diar/segment_clustering_ivector.sh --nj 1 --use-segment-label true --ivector-dist-stop 0.7 exp/clustering/$session/segments exp/extractor_256 data/$session exp/clustering_ivector/$session	
     
     log_end "Bottom Up Clustering With Ivector"
 }
@@ -85,9 +85,9 @@ bottom_up_clustering
 
 bottom_up_clustering_der(){
 	
-    diar/compute_DER.sh --sanity_check false exp/ref/$data/rttms exp/clustering_ivector/$data/rttms exp/result_DER/$data	
-    grep OVERALL exp/result_DER/$data/*.der		
-
+    diar/compute_DER.sh --sanity_check false exp/ref/$session/rttms exp/clustering_ivector/$session/rttms exp/result_DER/$session	
+    grep OVERALL exp/result_DER/$session/*.der && grep OVERALL exp/result_DER/$session/*.der | awk '{ sum += $7; n++ } END { if (n > 0) print "Avergage: " sum / n; }'
 }
 bottom_up_clustering_der
+
 
