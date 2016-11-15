@@ -29,16 +29,15 @@ Authors: [Chengzhu Yu](https://sites.google.com/site/chengzhuyu0/home) and [Navi
 ### Benchmark Pefformance
 We evaluate our performance on [AMI meeting corpus](http://groups.inf.ed.ac.uk/ami/download/) and comparing the numbers with those reported in [Pycasp](http://multimedia.icsi.berkeley.edu/scalable-big-data-analysis/pycasp/).
   
-exp/result_DER/demo/IS1000a.Mix-Headset.der: OVERALL SPEAKER DIARIZATION ERROR = 10.03 percent `(ALL)
-exp/result_DER/demo/IS1001a.Mix-Headset.der: OVERALL SPEAKER DIARIZATION ERROR = 29.16 percent `(ALL)
-exp/result_DER/demo/IS1001b.Mix-Headset.der: OVERALL SPEAKER DIARIZATION ERROR = 6.12 percent `(ALL)
-exp/result_DER/demo/IS1001c.Mix-Headset.der: OVERALL SPEAKER DIARIZATION ERROR = 10.88 percent `(ALL)
-exp/result_DER/demo/IS1003b.Mix-Headset.der: OVERALL SPEAKER DIARIZATION ERROR = 28.81 percent `(ALL)
-exp/result_DER/demo/IS1003d.Mix-Headset.der: OVERALL SPEAKER DIARIZATION ERROR = 40.32 percent `(ALL)
-exp/result_DER/demo/IS1006b.Mix-Headset.der: OVERALL SPEAKER DIARIZATION ERROR = 6.57 percent `(ALL)
-exp/result_DER/demo/IS1006d.Mix-Headset.der: OVERALL SPEAKER DIARIZATION ERROR = 48.16 percent `(ALL)
-exp/result_DER/demo/IS1008a.Mix-Headset.der: OVERALL SPEAKER DIARIZATION ERROR = 21.68 percent `(ALL)
-exp/result_DER/demo/IS1008b.Mix-Headset.der: OVERALL SPEAKER DIARIZATION ERROR = 2.47 percent `(ALL)
-exp/result_DER/demo/IS1008c.Mix-Headset.der: OVERALL SPEAKER DIARIZATION ERROR = 37.64 percent `(ALL)
-exp/result_DER/demo/IS1008d.Mix-Headset.der: OVERALL SPEAKER DIARIZATION ERROR = 32.27 percent `(ALL)
-Avergage: 22.8425
+IS1001a.Mix-Headset.der : 29.16
+IS1001b.Mix-Headset.der : 6.12
+IS1001c.Mix-Headset.der : 10.88
+IS1003b.Mix-Headset.der : 28.81
+IS1003d.Mix-Headset.der : 40.32
+IS1006b.Mix-Headset.der : 6.57
+IS1006d.Mix-Headset.der : 48.16
+IS1008a.Mix-Headset.der : 21.68
+IS1008b.Mix-Headset.der : 2.47
+IS1008c.Mix-Headset.der : 37.64
+IS1008d.Mix-Headset.der : 32.27
+Average: 22.84
