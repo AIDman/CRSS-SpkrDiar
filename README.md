@@ -1,5 +1,5 @@
 # CRSS Speaker Diarization Toolkit (CRSS-SpkrDiar)
-### About
+## About
 CRSS-SpkDiar is a C++ based speaker diarization toolkit, built on top of famous open source speech recognition platform of [Kaldi](http://kaldi.sourceforge.net/). The main objective of this toolkit is as follow:
 
   - Simple integration with Kaldi ASR, 
@@ -15,7 +15,7 @@ As the current version is not completed, with several missing components,
 we do not recommend you to try it. As long as it is ready, we will include installation guidance and the recipe to 
 reproduce our results._
 
-### Current Stage of Development
+## Current Stage of Development
 ##### _Completed:_
  - Bottom-Up Clustering Using BIC, Symmetric KL divergence
  - Bottom-Up Clustering Using i-vector cosine distance score (CDS).
@@ -27,11 +27,11 @@ reproduce our results._
  - Supervised/Semi-supervised Diarization
  - Generate flexible interface with Kaldi ASR
 
-### Dependencies
+## Dependencies
   - Kaldi
   - GLPK (if only you want to try ILP)
   
-### Benchmark Pefformance
+## Benchmark Pefformance
 We evaluate our performance on [AMI meeting corpus](http://groups.inf.ed.ac.uk/ami/download/) and comparing the numbers with those reported in [Pycasp](http://multimedia.icsi.berkeley.edu/scalable-big-data-analysis/pycasp/).
 
 | Session       |      Pycasp   |   CRSS-SpkDiar  |
