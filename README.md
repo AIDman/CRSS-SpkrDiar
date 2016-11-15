@@ -16,7 +16,7 @@ Authors: [Chengzhu Yu](https://sites.google.com/site/chengzhuyu0/home) and [Navi
  - Bottom-Up Clustering Using i-vector cosine distance score (CDS).
  - ILP Clustering with i-vector CDS as distance.
 
-##### To Do:
+##### To Be Completed:
  - Test and incorporate PLDA, Conditional Bayes, Mahalanobis distance for clustering    
  - Sementation
  - Supervised/Semeisupervised Diarization
@@ -24,7 +24,21 @@ Authors: [Chengzhu Yu](https://sites.google.com/site/chengzhuyu0/home) and [Navi
 
 ### Dependencies
   - Kaldi
-  - GLPK
-  - Python
+  - GLPK (if only you want to try ILP)
   
-### Installation
+### Benchmark Pefformance
+We evaluate our performance on [AMI meeting corpus](http://groups.inf.ed.ac.uk/ami/download/) and comparing the numbers with those reported in [Pycasp](http://multimedia.icsi.berkeley.edu/scalable-big-data-analysis/pycasp/).
+  
+exp/result_DER/demo/IS1000a.Mix-Headset.der: OVERALL SPEAKER DIARIZATION ERROR = 10.03 percent `(ALL)
+exp/result_DER/demo/IS1001a.Mix-Headset.der: OVERALL SPEAKER DIARIZATION ERROR = 29.16 percent `(ALL)
+exp/result_DER/demo/IS1001b.Mix-Headset.der: OVERALL SPEAKER DIARIZATION ERROR = 6.12 percent `(ALL)
+exp/result_DER/demo/IS1001c.Mix-Headset.der: OVERALL SPEAKER DIARIZATION ERROR = 10.88 percent `(ALL)
+exp/result_DER/demo/IS1003b.Mix-Headset.der: OVERALL SPEAKER DIARIZATION ERROR = 28.81 percent `(ALL)
+exp/result_DER/demo/IS1003d.Mix-Headset.der: OVERALL SPEAKER DIARIZATION ERROR = 40.32 percent `(ALL)
+exp/result_DER/demo/IS1006b.Mix-Headset.der: OVERALL SPEAKER DIARIZATION ERROR = 6.57 percent `(ALL)
+exp/result_DER/demo/IS1006d.Mix-Headset.der: OVERALL SPEAKER DIARIZATION ERROR = 48.16 percent `(ALL)
+exp/result_DER/demo/IS1008a.Mix-Headset.der: OVERALL SPEAKER DIARIZATION ERROR = 21.68 percent `(ALL)
+exp/result_DER/demo/IS1008b.Mix-Headset.der: OVERALL SPEAKER DIARIZATION ERROR = 2.47 percent `(ALL)
+exp/result_DER/demo/IS1008c.Mix-Headset.der: OVERALL SPEAKER DIARIZATION ERROR = 37.64 percent `(ALL)
+exp/result_DER/demo/IS1008d.Mix-Headset.der: OVERALL SPEAKER DIARIZATION ERROR = 32.27 percent `(ALL)
+Avergage: 22.8425
