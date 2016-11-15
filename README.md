@@ -8,7 +8,12 @@ CRSS-SpkDiar is a C++ based speaker diarization toolkit, built on top of famous 
   - Perform speaker diarization unsupervised/supervised/semisupervised fasion
   - Bentchmark on open database
 
-Authors: [Chengzhu Yu](https://sites.google.com/site/chengzhuyu0/home) and [Navid Shokouhi](https://scholar.google.com/citations?user=DHxzPt8AAAAJ&hl=en) .
+Authors: [Chengzhu Yu](https://sites.google.com/site/chengzhuyu0/home) and [Navid Shokouhi](https://scholar.google.com/citations?user=DHxzPt8AAAAJ&hl=en).
+
+> We plan to officially realease this toolkit around January, 2017. 
+> As the current version is not stable, we do not recommend you try it.
+> As long as we completed, we will include installation guidance and the recipe to 
+> reproduce our results.
 
 ### Current Stage of Development
 ##### Completed:
@@ -28,16 +33,19 @@ Authors: [Chengzhu Yu](https://sites.google.com/site/chengzhuyu0/home) and [Navi
   
 ### Benchmark Pefformance
 We evaluate our performance on [AMI meeting corpus](http://groups.inf.ed.ac.uk/ami/download/) and comparing the numbers with those reported in [Pycasp](http://multimedia.icsi.berkeley.edu/scalable-big-data-analysis/pycasp/).
------------- | -------------
-IS1001a.Mix-Headset.der | 29.16 
-IS1001b.Mix-Headset.der | 6.12  
-IS1001c.Mix-Headset.der 10.88
-IS1003b.Mix-Headset.der 28.81
-IS1003d.Mix-Headset.der 40.32
-IS1006b.Mix-Headset.der 6.57
-IS1006d.Mix-Headset.der 48.16
-IS1008a.Mix-Headset.der 21.68
-IS1008b.Mix-Headset.der 2.47
-IS1008c.Mix-Headset.der 37.64
-IS1008d.Mix-Headset.der 32.27
-Average: 22.84
+
+| Session       |      Pycasp   |   CRSS-SpkDiar  |
+| ------------- | ------------- | -------------   | 
+IS1000a.Mix-Headset | 25.38 | 10.03|
+IS1001a.Mix-Headset | 32.34 | 29.16|
+IS1001b.Mix-Headset | 10.57 | 6.12 |
+IS1001c.Mix-Headset | 28.40 | 10.88|
+IS1003b.Mix-Headset | 34.30 | 28.81|
+IS1003d.Mix-Headset | 50.75 | 40.32|
+IS1006b.Mix-Headset | 16.57 | 6.57 |
+IS1006d.Mix-Headset | 53.05 |48.16 |
+IS1008a.Mix-Headset | 1.65  |21.68 |
+IS1008b.Mix-Headset | 8.58  |2.47  |
+IS1008c.Mix-Headset | 9.30  |37.64 | 
+IS1008d.Mix-Headset | 26.27 |32.27 | 
+Average             | 24.76% |**22.84%** | 
