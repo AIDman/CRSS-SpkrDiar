@@ -109,16 +109,16 @@ int main(int argc, char *argv[]) {
 
                 if (i != j && (i_label == j_label) && i_label != "nonspeech" &&
                          i_label != "overlap" && j_label != "nonspeech" && j_label != "overlap") {
-                    BaseFloat dot_product = 1 - cosineDistance(i_ivector, j_ivector);
-                    BaseFloat distance = mahalanobisDistance(i_ivector, j_ivector, total_cov);
+                    BaseFloat dot_product = 1 - CosineDistance(i_ivector, j_ivector);
+                    BaseFloat distance = MahalanobisDistance(i_ivector, j_ivector, total_cov);
                     true_score += dot_product; true_count++;
                     KALDI_LOG << "TRUE Mahalanobis scores: " << distance;
                     KALDI_LOG << "TRUE Cosine scores: " << dot_product;
                 }
                 if (i != j && i_label != j_label && i_label != "nonspeech" &&
                         i_label != "overlap" && j_label != "nonspeech" && j_label != "overlap") {
-                    BaseFloat dot_product =  1 - cosineDistance(i_ivector, j_ivector);
-                    BaseFloat distance = mahalanobisDistance(i_ivector, j_ivector, total_cov);
+                    BaseFloat dot_product =  1 - CosineDistance(i_ivector, j_ivector);
+                    BaseFloat distance = MahalanobisDistance(i_ivector, j_ivector, total_cov);
                     false_score += dot_product; false_count++;
                     KALDI_LOG << "FALSE Mahalanobis scores: " << distance;
                     KALDI_LOG << "FALSE Cosine scores: " << dot_product;

@@ -195,15 +195,20 @@ void Segments::ToLabels(Vector<BaseFloat>& labels){
 */
 
 
-void SegmentCollection::ToRTTM(const std::string& uttid, const std::string& rttmName) {
+void SegmentCollection::WriteToRTTM(const std::string& rttm_outputdir) {
+	std::string rttmName = rttm_outputdir + "/" + this->uttid_ +".rttm";
+	std::string rttm_scpfilename = rttm_outputdir + "/" + "rttms.scp";
 	std::ofstream fout;
+	std::ofstream fscp;
 	fout.open(rttmName.c_str());
+	fscp.open(rttm_scpfilename.c_str(), std::ios::app);
+
 	for (size_t i =0; i < this->segment_list_.size(); i++){
 		std::string spkrID = this->segment_list_[i]->Label();
 		BaseFloat segStart = FrameIndexToSeconds(this->segment_list_[i]->StartIdx());
 		BaseFloat segLength = FrameIndexToSeconds(this->segment_list_[i]->EndIdx()) - segStart;
 		fout << "SPEAKER ";
-		fout << uttid << " ";
+		fout << this->uttid_ << " ";
 		fout << 1 << " ";
 		fout << std::fixed << std::setprecision(3);
 		fout << segStart << " ";
@@ -212,6 +217,8 @@ void SegmentCollection::ToRTTM(const std::string& uttid, const std::string& rttm
 		fout << spkrID << " ";
 		fout << "<NA>\n";
 	}
+	fscp << rttmName << "\n";
+	fscp.close();
 	fout.close();
 }
 

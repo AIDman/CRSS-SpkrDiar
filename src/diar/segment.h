@@ -56,7 +56,7 @@ public:
 	int32 Size() const;
 	std::string UttID();
 	//void ToLabels(Vector<BaseFloat>&);
-	void ToRTTM(const std::string& uttid, const std::string& rttmName);
+	void WriteToRTTM(const std::string& rttm_outputdir);
 	Segment* KthSegment(int32 k);
 	SegmentCollection GetSpeechSegments();
 	SegmentCollection GetLargeSegments(int32 min_seg_len);

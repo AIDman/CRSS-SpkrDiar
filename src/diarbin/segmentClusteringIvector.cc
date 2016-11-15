@@ -16,6 +16,7 @@ int main(int argc, char *argv[]) {
 
         const char *usage = "Bottom Up clustering on segments based on i-vector. \n";
 
+        bool use_segment_label = false;
         int32 min_update_segment = 0;
         int32 target_cluster_num = 0;
         BaseFloat ivector_dist_stop = 1.0;
@@ -26,6 +27,7 @@ int main(int argc, char *argv[]) {
         po.Register("target-cluster_num", &target_cluster_num, "Target cluster number as stopping criterion");
         po.Register("ivector-dist-stop", &ivector_dist_stop, "Ivector distance threshold af stopping crierion");
         po.Register("ivector-dist-type", &ivector_dist_type, "Ivector Distance Type For Clustering. e.g., CosineDistance");
+        po.Register("use-segment-label", &use_segment_label, "If 'true', use segment labels to initialize the clusters");
         po.Read(argc, argv);
 
         if (po.NumArgs() != 6) {
@@ -59,11 +61,10 @@ int main(int argc, char *argv[]) {
             // read segments
             SegmentCollection utt_segments;
             utt_segments.Read(line);
+            SegmentCollection speech_segments = utt_segments.GetSpeechSegments();
 
             // read features
             Matrix<BaseFloat> feats = feature_reader.Value(utt_segments.UttID());
-            SegmentCollection speech_segments = utt_segments.GetSpeechSegments();
-            ClusterCollection segment_clusters;
  
             // read posterior
             Posterior posteriors = posterior_reader.Value(utt_segments.UttID());
@@ -71,7 +72,15 @@ int main(int argc, char *argv[]) {
             // get ivect_info
             IvectorInfo ivec_info(&feats, &posteriors, &extractor);
 
-            segment_clusters.InitFromNonLabeledSegments(speech_segments);
+            // Initiate Clusters
+            ClusterCollection segment_clusters;
+            if (use_segment_label) {
+                KALDI_LOG << "Clusters intitiats from previously clusterred segments"; 
+                segment_clusters.InitFromLabeledSegments(speech_segments);
+            } else {
+                KALDI_LOG << "Clusters intitiats from non-clusterred segments"; 
+                segment_clusters.InitFromNonLabeledSegments(speech_segments);
+            }
  
             segment_clusters.BottomUpClusteringIvector(ivec_info, config);
             

@@ -68,6 +68,23 @@ std::vector<std::string> returnNonEmptyFields(const std::vector<std::string>& fi
 }
 
 
+void ComputeDistanceMatrix(const std::vector< Vector<double> >& vector_list, 
+							Matrix<BaseFloat>& distance_matrix) {
+	distance_matrix.Resize(vector_list.size(),vector_list.size());
+
+	for (size_t i=0; i<vector_list.size();i++){
+		for (size_t j=0;j<vector_list.size();j++){
+			if (i == j){
+				distance_matrix(i,j) = 0;
+			}else{
+				distance_matrix(i,j) = 1 - CosineDistance(vector_list[i],vector_list[j]);
+			}
+		}
+	}
+	return;
+}
+
+
 void computeDistanceMatrix(const std::vector< Vector<double> >& vectorList, 
 							Matrix<BaseFloat>& distanceMatrix,
 							const std::vector< Vector<double> >& backgroundIvectors,
@@ -104,7 +121,7 @@ void computeDistanceMatrix(const std::vector< Vector<double> >& vectorList,
 }
 
 
-BaseFloat mahalanobisDistance(const Vector<double>& v1, const Vector<double>& v2, 
+BaseFloat MahalanobisDistance(const Vector<double>& v1, const Vector<double>& v2, 
 							  const SpMatrix<double>& cov) {
 
 	Vector<double> iv1(v1.Dim());
@@ -124,7 +141,7 @@ BaseFloat mahalanobisDistance(const Vector<double>& v1, const Vector<double>& v2
 }
 
 
-BaseFloat cosineDistance(const Vector<double>& v1, const Vector<double>& v2) {
+BaseFloat CosineDistance(const Vector<double>& v1, const Vector<double>& v2) {
 	 BaseFloat dotProduct = VecVec(v1, v2);
 	 BaseFloat norm1 = VecVec(v1, v1) + FLT_EPSILON;
 	 BaseFloat norm2 = VecVec(v2, v2) + FLT_EPSILON;
@@ -139,7 +156,7 @@ BaseFloat conditionalBayesDistance(const Vector<double>& v1, const Vector<double
 	// This measure is computes a mahalanobis distance while assuming 
 	// a similar within-class covariance for all speakers in development data. 
 	// Different from regular mahalanobis distance in the covariance. 
-	return mahalanobisDistance(v1, v2, withinCov);
+	return MahalanobisDistance(v1, v2, withinCov);
 }
 
 BaseFloat pldaScoring(const Vector<double>& v1, const Vector<double>& v2, 

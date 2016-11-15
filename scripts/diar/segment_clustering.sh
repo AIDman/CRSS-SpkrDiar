@@ -13,7 +13,7 @@ min_update_segment=0
 lambda=5.0
 dist_type="KL2"
 target_cluster_num=2
-
+use_segment_label=false
 # End configuration section.
 
 echo "$0 $@"  # Print the command line for logging
@@ -36,7 +36,7 @@ feats="ark,s,cs:copy-feats scp:$data/feats.scp ark:- | apply-cmvn --norm-vars=tr
 if [ $stage -le 0 ]; then
 
   $cmd JOB=1:$nj $dir/log/segment_clustering.JOB.log \
-    segmentClustering --min-update-segment=$min_update_segment --target-cluster-num=$target_cluster_num \
+    segmentClustering --use-segment-label=$use_segment_label --min-update-segment=$min_update_segment --target-cluster-num=$target_cluster_num \
 		--lambda=$lambda --dist-type=$dist_type $segdir/segments.scp "$feats" $dir/segments $dir/rttms || exit 1;
 
 fi

@@ -23,44 +23,47 @@ typedef kaldi::int32 int32;
 class GlpkILP {
 public:
 	GlpkILP() {};
-	GlpkILP(BaseFloat delta);
-	GlpkILP(Matrix<BaseFloat>& distanceMatrix, BaseFloat delta);
+	GlpkILP(std::string uttid, BaseFloat delta);
+	GlpkILP(std::string uttid, Matrix<BaseFloat>& distance_matrix, BaseFloat delta);
+
+	std::string UttID();
 
 	// generate ILP problem description in CPLEX LP format
-	void glpkIlpProblem();
+	void GlpkIlpProblem();
 
 	// write objective function of ILP in glpk format, refer to equation (2) in the paper [1]
-	std::string problemMinimize();
+	std::string ProblemMinimize();
 
 	// write constraint function for unique center assigment as in equation (2.3) in the paper[1]
-	void problemConstraintsColumnSum();
+	void ProblemConstraintsColumnSum();
 
 	//  write constraint function as in equation (2.4) in the paper[1]
-	void problemConstraintsCenter();
+	void ProblemConstraintsCenter();
 
 	// explicitly enforce distance upperbound (eq. 1.5) in paper [1]
-	void distanceUpperBound();
+	void DistanceUpperBound();
 
 	// list all binary variables as in equation (2.2) in the paper [1]
-	void listBinaryVariables();
+	void ListBinaryVariables();
 
 
 	// generate variable names represent ILP problem in glpk format
-	std::string indexToVarName(std::string variableName, int32 i, int32 j);
+	std::string IndexToVarName(std::string variableName, int32 i, int32 j);
 
 	// generate variable names represent ILP problem in glpk format
-	std::vector<int32> varNameToIndex(std::string& variableName);
+	std::vector<int32> VarNameToIndex(std::string& variable_name);
 
 	// write template into filse
-	void Write(std::string outName);
+	void Write(std::string ilp_dir);
 
 	// Read the ILP solution (written in glpk format)
-	std::vector<std::string> ReadGlpkSolution(std::string glpkSolutionFile);
+	std::vector<std::string> ReadGlpkSolution(std::string glpk_solution_file);
 
 private:
-	BaseFloat _delta;
-	std::vector<std::string> _problem;
-	Matrix<BaseFloat> _distanceMatrix;
+	std::string uttid_;
+	BaseFloat delta_;
+	std::vector<std::string> problem_;
+	Matrix<BaseFloat> distance_matrix_;
 };
 
 }

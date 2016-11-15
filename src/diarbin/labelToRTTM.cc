@@ -29,7 +29,6 @@ int main(int argc, char *argv[]) {
     for (; !label_reader.Done(); label_reader.Next()) {
         SegmentCollection allSegments(label_reader.Value(), label_reader.Key());
         SegmentCollection speechSegments = allSegments.GetSpeechSegments();
-        std::string rttm_wspecifier = rttm_outputdir + "/" + speechSegments.UttID() +".rttm";
-        speechSegments.ToRTTM(speechSegments.UttID(), rttm_wspecifier);
+        speechSegments.WriteToRTTM(rttm_outputdir);
     }
 }

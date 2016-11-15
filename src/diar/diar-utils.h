@@ -229,19 +229,21 @@ std::vector<std::string> split(const std::string& s, char delim);
 
 std::vector<std::string> returnNonEmptyFields(const std::vector<std::string>& fields);
 
-// compute distant matrix from i-vector collections, return distant matrix, 
-// and list of corresponding keys of ivectors
+// compute distant matrix from i-vector collections, return distant matrix;
+void ComputeDistanceMatrix(const std::vector< Vector<double> >& vector_list, 
+							Matrix<BaseFloat>& distance_matrix);
+
 void computeDistanceMatrix(const std::vector< Vector<double> >& vectorList, 
 							Matrix<BaseFloat>& distanceMatrix,
 							const std::vector< Vector<double> >& backgroundIvectors,
 							const std::vector< std::string >& backgroundIvectorLabels);
 
 // compute the Mahalanobis distance between two i-vectors
-BaseFloat mahalanobisDistance(const Vector<double>& v1, const Vector<double>& v2, 
+BaseFloat MahalanobisDistance(const Vector<double>& v1, const Vector<double>& v2, 
 								const SpMatrix<double>& cov);
 
 // compute the cosine distance between two i-vectors
-BaseFloat cosineDistance(const Vector<double>& v1, const Vector<double>& v2);
+BaseFloat CosineDistance(const Vector<double>& v1, const Vector<double>& v2);
 
 // Mahalanobis Distance using a averaged within-class covariance (assumes homoscedasticity)
 BaseFloat conditionalBayesDistance(const Vector<double>& v1, const Vector<double>& v2, 

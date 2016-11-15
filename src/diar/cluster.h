@@ -33,6 +33,7 @@ public:
 	void AddSegment(Segment new_segment);
 	std::vector<Segment> AllSegments() const;
 	std::string Label() const;
+	void SetLabel(const std::string& label);
 	int32 NumFrames() const;
 	int32 NumFramesAfterMask() const;
 	int32 NumSegments() const;
@@ -72,8 +73,8 @@ public:
 	string UttID();
 	int32 NumFrames();
 	int32 NumFramesAfterMask();
-	void InitFromNonLabeledSegments(SegmentCollection non_clustered_segmemts);
-	//InitFromLabeledSegments(SegmentCollection);
+	void InitFromNonLabeledSegments(SegmentCollection& non_clustered_segmemts);
+	void InitFromLabeledSegments(SegmentCollection& pre_clustered_segments);
 	void BottomUpClustering(const Matrix<BaseFloat> &feats, const DiarConfig& config);
 	void BottomUpClusteringIvector(IvectorInfo& ivec_info, const DiarConfig& config);
 	void SetIvector(IvectorInfo& ivec_info);

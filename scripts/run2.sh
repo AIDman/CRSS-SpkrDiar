@@ -17,8 +17,8 @@ log_end(){
 
 set -e # exit on error
 
-#data="demo" # data for diarization
-data="is_sessions_file_1" # data for diarization
+data="demo" # data for diarization
+#data="is_sessions_file_1" # data for diarization
 data_dev="is_sessions"  # dev_data is for UBM, TV matrix training for i-vector
 
 run_mfcc(){
@@ -76,7 +76,7 @@ train_extractor(){
 bottom_up_clustering(){
     log_start "Bottom Up Clustering With Ivector"
 
-    diar/segment_clustering_ivector.sh --nj 1 exp/ref/$data/segments exp/extractor_256 data/$data exp/clustering_ivector/$data	
+    diar/segment_clustering_ivector.sh --nj 1 --use-segment-label false --ivector-dist-stop 0.7 exp/ref/$data/segments exp/extractor_256 data/$data exp/clustering_ivector/$data	
     
     log_end "Bottom Up Clustering With Ivector"
 }

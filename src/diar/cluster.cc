@@ -35,6 +35,10 @@ std::string Cluster::Label() const {
 	return this->label_;
 }
 
+void Cluster::SetLabel(const std::string& label) {
+	this->label_ = label;
+	return;
+}
 
 int32 Cluster::NumFrames() const {
 	return this->frames_;
@@ -255,10 +259,14 @@ int32 ClusterCollection::NumFramesAfterMask() {
 	return tot_frames;
 }
 
-void ClusterCollection::InitFromNonLabeledSegments(SegmentCollection non_clustered_segments) {
+void ClusterCollection::InitFromNonLabeledSegments(SegmentCollection& non_clustered_segments) {
 	 int32 num_segments = non_clustered_segments.Size();
+
 	 if(num_segments < 1) KALDI_ERR << "Clusters could not be initialized from empty segments";
-	 Cluster* head_cluster = new Cluster(*(non_clustered_segments.KthSegment(0)));
+
+	 Segment* head_segment = non_clustered_segments.KthSegment(0);	 
+	 Cluster* head_cluster = new Cluster(*head_segment);
+
 	 Cluster* prev_cluster = NULL; 
 	 for(int32 i=0; i<num_segments;i++){
 	 	if(i==0) {
@@ -274,9 +282,54 @@ void ClusterCollection::InitFromNonLabeledSegments(SegmentCollection non_cluster
 	 	if(i==num_segments-1) new_cluster->next=NULL; // last cluster's next point to NULL
 	 }
 
-
 	 this->num_clusters_ = num_segments;
 	 this->uttid_ = non_clustered_segments.UttID();
+	 this->head_cluster_ = head_cluster;
+	 return;
+}
+
+
+void ClusterCollection::InitFromLabeledSegments(SegmentCollection& pre_clustered_segments) {
+	 int32 num_segments = pre_clustered_segments.Size();
+
+	 if(num_segments < 1) KALDI_ERR << "Clusters could not be initialized from empty segments";
+
+	 // need to put all segments with same label into one class
+	 std::unordered_map<std::string, Cluster*> cluster_label_map;
+
+	 Cluster* head_cluster = new Cluster(*(pre_clustered_segments.KthSegment(0)));
+	 head_cluster->SetLabel(pre_clustered_segments.KthSegment(0)->Label());
+	 cluster_label_map[head_cluster->Label()] = head_cluster;
+
+	 Cluster* prev_cluster = NULL;
+	 this->num_clusters_ = 0; 
+	 Cluster* last_cluster = head_cluster;
+	 for(int32 i=0; i<num_segments;i++){
+	 	if(i==0) {
+	 		head_cluster->prev = NULL;
+	 		prev_cluster = head_cluster;
+	 		this->num_clusters_++;
+	 		continue;
+	 	} 
+
+	 	Segment* curr_segment = pre_clustered_segments.KthSegment(i);
+	 	std::string curr_spk_label = curr_segment->Label();
+
+	 	if(cluster_label_map.find(curr_spk_label) == cluster_label_map.end()) {
+		 	Cluster* new_cluster = new Cluster(*curr_segment);
+		 	new_cluster->SetLabel(curr_spk_label);
+		 	prev_cluster->next = new_cluster;
+		 	new_cluster->prev = prev_cluster;
+		 	prev_cluster = new_cluster;
+		 	last_cluster = new_cluster;
+		 	cluster_label_map[curr_spk_label] = new_cluster;
+	 		this->num_clusters_++;
+		 } else{
+		 	cluster_label_map[curr_spk_label]->AddSegment(*curr_segment);
+		 }
+	 }
+	 last_cluster->next=NULL; // make sure the last cluster's next point to null
+	 this->uttid_ = pre_clustered_segments.UttID();
 	 this->head_cluster_ = head_cluster;
 	 return;
 }
@@ -545,7 +598,7 @@ BaseFloat ClusterCollection::FindMinDistClustersIvector(const DiarConfig& config
 				dist = dist_matrix[p1_idx][p2_idx]; // been updated before, avoid recalculation
 			}else{
 				if (config.ivector_dist_type == "CosineDistance") {
-					dist = 1 - cosineDistance(p1->Ivector(), p2->Ivector());
+					dist = 1 - CosineDistance(p1->Ivector(), p2->Ivector());
 				}
 				dist_matrix[p1_idx][p2_idx] = dist;
 			}
@@ -623,7 +676,7 @@ BaseFloat ClusterCollection::DistanceOfTwoClustersIvectorKL2(const Matrix<BaseFl
 	ComputeIvector(feats_clust1, postprob_clust2, extractor, ivector_clust2_mean, ivector_clust2_covar);
 
 	//return  SymetricKlDistance(ivector_clust1_mean, ivector_clust2_mean, ivector_clust1_covar, ivector_clust2_covar);
-	return  cosineDistance(ivector_clust1_mean, ivector_clust2_mean);
+	return  CosineDistance(ivector_clust1_mean, ivector_clust2_mean);
 }
 
 
@@ -695,7 +748,6 @@ void ClusterCollection::WriteToRttm(const std::string& rttm_outputdir) {
 		}
 		curr=curr->next;
 	}
-
 	fscp << rttmName << "\n";
 	fscp.close();
 	fout.close();
