@@ -5,14 +5,14 @@ CRSS-SpkDiar is a C++ based speaker diarization toolkit, built on top of famous 
   - Simple integration with Kaldi ASR, 
   - Simple intergration of i-vector training and extraction within Kaldi for Diarization
   - Simple intergration of DNN within Kaldi for Diarization 
-  - Perform speaker diarization unsupervised/supervised/semisupervised fasion
-  - Bentchmark on open database
+  - Perform speaker diarization unsupervised/supervised/semi-supervised fasion
+  - Benchmark on open database (AMI meeting corpus, and more)
 
 Authors: [Chengzhu Yu](https://sites.google.com/site/chengzhuyu0/home) and [Navid Shokouhi](https://scholar.google.com/citations?user=DHxzPt8AAAAJ&hl=en).
 
 _We plan to officially realease CRSS-SpkrDiar toolkit around January, 2017. 
-As the current version is not completed, we do not recommend you to try it.
-As long as it is ready, we will include installation guidance and the recipe to 
+As the current version is not completed, with several missing components,
+we do not recommend you to try it. As long as it is ready, we will include installation guidance and the recipe to 
 reproduce our results._
 
 ### Current Stage of Development
@@ -24,7 +24,7 @@ reproduce our results._
 ##### _To Be Completed:_
  - Test and incorporate PLDA, Conditional Bayes, Mahalanobis distance for clustering    
  - Sementation
- - Supervised/Semeisupervised Diarization
+ - Supervised/Semi-supervised Diarization
  - Generate flexible interface with Kaldi ASR
 
 ### Dependencies
