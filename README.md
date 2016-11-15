@@ -28,16 +28,16 @@ Authors: [Chengzhu Yu](https://sites.google.com/site/chengzhuyu0/home) and [Navi
   
 ### Benchmark Pefformance
 We evaluate our performance on [AMI meeting corpus](http://groups.inf.ed.ac.uk/ami/download/) and comparing the numbers with those reported in [Pycasp](http://multimedia.icsi.berkeley.edu/scalable-big-data-analysis/pycasp/).
-  
-IS1001a.Mix-Headset.der : 29.16
-IS1001b.Mix-Headset.der : 6.12
-IS1001c.Mix-Headset.der : 10.88
-IS1003b.Mix-Headset.der : 28.81
-IS1003d.Mix-Headset.der : 40.32
-IS1006b.Mix-Headset.der : 6.57
-IS1006d.Mix-Headset.der : 48.16
-IS1008a.Mix-Headset.der : 21.68
-IS1008b.Mix-Headset.der : 2.47
-IS1008c.Mix-Headset.der : 37.64
-IS1008d.Mix-Headset.der : 32.27
+------------ | -------------
+IS1001a.Mix-Headset.der | 29.16 
+IS1001b.Mix-Headset.der | 6.12  
+IS1001c.Mix-Headset.der 10.88
+IS1003b.Mix-Headset.der 28.81
+IS1003d.Mix-Headset.der 40.32
+IS1006b.Mix-Headset.der 6.57
+IS1006d.Mix-Headset.der 48.16
+IS1008a.Mix-Headset.der 21.68
+IS1008b.Mix-Headset.der 2.47
+IS1008c.Mix-Headset.der 37.64
+IS1008d.Mix-Headset.der 32.27
 Average: 22.84
