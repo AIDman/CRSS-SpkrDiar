@@ -10,6 +10,7 @@
 # Begin configuration section.
 nj=1
 cmd="run.pl"
+use_segment_label=false
 # End configuration section.
 
 echo "$0 $@"  # Print the command line for logging
@@ -36,5 +37,5 @@ while read -r ilp_problem; do
 done < $dir/ilps/ilp.scp
 
 # Interperate ILP clustering result in GLPK format into rttm for compute DER infuture
-glpk_to_rttm $dir/sols/sols.scp $segdir/segments.scp $dir/rttms/rttms
+glpk_to_rttm --use-segment-label=$use_segment_label $dir/sols/sols.scp $segdir/segments.scp $dir/rttms
 

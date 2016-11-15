@@ -8,6 +8,7 @@
 #include "diar/ilp.h"
 #include "diar/diar-utils.h"
 #include "diar/segment.h"
+#include "diar/cluster.h"
 
 
 
@@ -17,7 +18,10 @@ int main(int argc, char *argv[]) {
 
     const char *usage = "Convert gplk output into RTTM format for compute DER \n";
 
+    bool use_segment_label = false; 
+
     kaldi::ParseOptions po(usage);
+    po.Register("use-segment-label", &use_segment_label, "If 'true', use segment labels to initialize the clusters");
     po.Read(argc, argv);
 
     if (po.NumArgs() != 3) {
@@ -47,11 +51,24 @@ int main(int argc, char *argv[]) {
         utt_segments.Read(line);
         SegmentCollection speech_segments = utt_segments.GetSpeechSegments();
 
-        int32 ind = 0;
-        for (size_t i = 0; i < speech_segments.Size(); i++) {
-            speech_segments.KthSegment(i)->SetLabel(ilp_cluster_label[ind++]);
+        // create clusters
+        ClusterCollection segment_clusters;
+        if (use_segment_label) {
+                KALDI_LOG << "Clusters intitiats from previously clusterred segments"; 
+                segment_clusters.InitFromLabeledSegments(speech_segments);
+        } else {
+                KALDI_LOG << "Clusters intitiats from non-clusterred segments"; 
+                segment_clusters.InitFromNonLabeledSegments(speech_segments);
         }
-        speech_segments.WriteToRTTM(rttm_outdir);
+
+        Cluster* curr = segment_clusters.Head();
+        int32 ind = 0;
+        while(curr) {
+            curr->SetLabel(ilp_cluster_label[ind]);
+            curr = curr->next;
+            ind++;
+        }
+        segment_clusters.WriteToRttm(rttm_outdir);
     }
 }
 

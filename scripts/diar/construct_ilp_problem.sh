@@ -19,6 +19,7 @@ posterior_scale=1.0 # This scale helps to control for successve features being h
 delta=30 # delta parameter for ILP clustering
 apply_cmvn_utterance=false
 apply_cmvn_sliding=false
+use_segment_label=false
 # End configuration section.
 
 echo "$0 $@"  # Print the command line for logging
@@ -74,7 +75,7 @@ if [ $stage -le 0 ]; then
 
   echo "delta is: $delta"
   $cmd JOB=1:$nj $dir/log/generate_ILP.JOB.log \
-     construct_ilp_problem --delta=$delta $segdir/segments.scp \
+     construct_ilp_problem --use-segment-label=$use_segment_label --delta=$delta $segdir/segments.scp \
      "$feats" ark,s,cs:$dir/posterior.JOB $extractor_dir/final.ie $dir/ilps || exit 1;
 
 fi

@@ -78,6 +78,7 @@ void ComputeDistanceMatrix(const std::vector< Vector<double> >& vector_list,
 				distance_matrix(i,j) = 0;
 			}else{
 				distance_matrix(i,j) = 1 - CosineDistance(vector_list[i],vector_list[j]);
+				KALDI_LOG << distance_matrix(i,j);
 			}
 		}
 	}

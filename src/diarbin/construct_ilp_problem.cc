@@ -18,7 +18,7 @@ int main(int argc, char *argv[]) {
 
     const char *usage = "Obtain glp ILP problem representation template \n";
 
-    BaseFloat delta = 30.0;
+    BaseFloat delta = 0.9;
     int32 min_update_segment = 0;
     bool use_segment_label = false; 
 
