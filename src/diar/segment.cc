@@ -86,8 +86,9 @@ void Segment::SetIvector(const Matrix<BaseFloat>& feats,
                                              need_2nd_order_stats);
     utt_stats.AccStats(seg_feats, seg_posterior);
     this->ivector_.Resize(extractor.IvectorDim());
+    this->ivector_covar_.Resize(extractor.IvectorDim());
     this->ivector_(0) = extractor.PriorOffset();
-    extractor.GetIvectorDistribution(utt_stats, &ivector_, NULL);
+    extractor.GetIvectorDistribution(utt_stats, &ivector_, &ivector_covar_);
     return;
 }
 
@@ -100,6 +101,9 @@ Vector<double> Segment::Ivector() {
 	return this->ivector_;
 }
 
+SpMatrix<double> Segment::IvectorCovar() {
+	return this->ivector_covar_;
+}
 
 // SegmentCollection Class Implementations
 SegmentCollection::SegmentCollection(){}

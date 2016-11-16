@@ -51,6 +51,20 @@ std::vector<std::string> ReturnNonEmptyFields(const std::vector<std::string>& fi
 }
 
 
+void ComputeIvector(const Matrix<BaseFloat>& feats, const Posterior& posteriors, 
+					const IvectorExtractor& extractor, Vector<double>& ivector_mean, SpMatrix<double>& ivector_covar) {
+    bool need_2nd_order_stats = false;
+    IvectorExtractorUtteranceStats utt_stats(extractor.NumGauss(),
+                                             extractor.FeatDim(),
+                                             need_2nd_order_stats);
+    utt_stats.AccStats(feats, posteriors);
+    ivector_mean.Resize(extractor.IvectorDim());
+    ivector_covar.Resize(extractor.IvectorDim());
+    ivector_mean(0) = extractor.PriorOffset();
+    extractor.GetIvectorDistribution(utt_stats, &ivector_mean, &ivector_covar);
+}
+
+
 void ComputeDistanceMatrix(const std::vector< Vector<double> >& vector_list, 
 							Matrix<BaseFloat>& distance_matrix) {
 	distance_matrix.Resize(vector_list.size(),vector_list.size());
@@ -96,6 +110,8 @@ BaseFloat CosineDistance(const Vector<double>& v1, const Vector<double>& v2) {
 
 	 return dotProduct / (sqrt(norm1)*sqrt(norm2));  
 }
+
+
 
 /*
 void computeDistanceMatrix(const std::vector< Vector<double> >& vectorList, 
@@ -203,7 +219,7 @@ BaseFloat sigmoidRectifier(BaseFloat logLikelihoodRatio) {
 }
 */
 
-BaseFloat SymetricKlDistance(const Vector<BaseFloat>& mean_vec_1, const Vector<BaseFloat>& mean_vec_2,
+BaseFloat SymetricKlDistanceDiag(const Vector<BaseFloat>& mean_vec_1, const Vector<BaseFloat>& mean_vec_2,
 												const Vector<BaseFloat>& cov_vec_1, const Vector<BaseFloat>& cov_vec_2) {
 
 	int32 dim = mean_vec_1.Dim();
@@ -223,18 +239,55 @@ BaseFloat SymetricKlDistance(const Vector<BaseFloat>& mean_vec_1, const Vector<B
 }
 
 
-void ComputeIvector(const Matrix<BaseFloat>& feats, const Posterior& posteriors, 
-					const IvectorExtractor& extractor, Vector<double>& ivector_mean, SpMatrix<double>& ivector_covar) {
-    bool need_2nd_order_stats = false;
-    IvectorExtractorUtteranceStats utt_stats(extractor.NumGauss(),
-                                             extractor.FeatDim(),
-                                             need_2nd_order_stats);
-    utt_stats.AccStats(feats, posteriors);
-    ivector_mean.Resize(extractor.IvectorDim());
-    ivector_covar.Resize(extractor.IvectorDim());
-    ivector_mean(0) = extractor.PriorOffset();
-    extractor.GetIvectorDistribution(utt_stats, &ivector_mean, &ivector_covar);
+BaseFloat SymetricKlDistanceDiag(const Vector<double>& mean_vec_1, const Vector<double>& mean_vec_2,
+								const SpMatrix<double>& cov_spmat_1, const SpMatrix<double> cov_spmat_2) {
+
+	int32 dim = mean_vec_1.Dim();
+
+	Matrix<double> cov_mat_1(cov_spmat_1);
+	Matrix<double> cov_mat_2(cov_spmat_2);	
+	Vector<double> cov_vec_1(dim);
+	Vector<double> cov_vec_2(dim);
+	for(int32 i = 0; i < dim; i++) {
+		cov_vec_1(i) = cov_mat_1(i,i);
+		cov_vec_2(i) = cov_mat_2(i,i);
+	}
+
+	Vector<double> diff_mean(dim);
+	diff_mean.AddVec(1.0, mean_vec_1);
+	diff_mean.AddVec(-1.0, mean_vec_2);
+	Vector<double> inv_cov_1(cov_vec_1), inv_cov_2(cov_vec_2);
+	inv_cov_1.InvertElements();
+	inv_cov_2.InvertElements();
+
+	double dist = 0.0;
+	for (size_t i = 0; i < dim; i++) {
+		dist += 0.5 * ((cov_vec_1(i) * inv_cov_2(i) + cov_vec_2(i) * inv_cov_1(i)) + diff_mean(i) * diff_mean(i) * (inv_cov_1(i) + inv_cov_2(i)));
+	}
+
+	return (BaseFloat) dist;	
 }
+
+/*
+BaseFloat SymetricKlDistanceFull(const Vector<double>& mean_vec_1, const Vector<double>& mean_vec_2,
+								const SpMatrix<double>& cov_vec_1, const SpMatrix<double> cov_vec_2) {
+
+	int32 dim = mean_vec_1.Dim();
+	Vector<BaseFloat> diff_mean(dim);
+	diff_mean.AddVec(1.0, mean_vec_1);
+	diff_mean.AddVec(-1.0, mean_vec_2);
+	Vector<BaseFloat> inv_cov_1(cov_vec_1), inv_cov_2(cov_vec_2);
+	inv_cov_1.InvertElements();
+	inv_cov_2.InvertElements();
+
+	BaseFloat dist = 0.0;
+	for (size_t i = 0; i < dim; i++) {
+		dist += 0.5 * ((cov_vec_1(i) * inv_cov_2(i) + cov_vec_2(i) * inv_cov_1(i)) + diff_mean(i) * diff_mean(i) * (inv_cov_1(i) + inv_cov_2(i)));
+	}
+
+	return dist;	
+}
+*/
 
 }
 

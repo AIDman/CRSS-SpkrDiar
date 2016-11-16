@@ -28,7 +28,8 @@ public:
 	int32 EndIdx();	// return last frame index of segment
 	int32 Size(); // return the frame length of the segment
 	int32 SizeAfterMask(); // return the frame length of the segment after masking
-	Vector<double> Ivector(); // return ith i-vector
+	Vector<double> Ivector(); // return i-vector
+	SpMatrix<double> IvectorCovar(); // return the i-vector uncertainty (covariance)
 	Vector<BaseFloat> Mask(); // return the mask
 	void SetLabel(std::string label);
 	void SetIvector(Vector<double>& ivec);	
@@ -44,6 +45,7 @@ private:
 	int32 size_;
 	int32 size_after_mask_;
 	Vector<double> ivector_;
+	SpMatrix<double> ivector_covar_;
 };
 
 // Segments are collection of segment, and the operations on those segments.
