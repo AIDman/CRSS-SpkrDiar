@@ -206,6 +206,9 @@ std::vector<std::string> split(const std::string& s, char delim);
 
 std::vector<std::string> ReturnNonEmptyFields(const std::vector<std::string>& fields);
 
+void ComputeIvector(const Matrix<BaseFloat>& feats, const Posterior& posteriors, 
+					const IvectorExtractor& extractor, Vector<double>& ivector_mean, SpMatrix<double>& ivector_covar);
+
 // compute distant matrix from i-vector collections, return distant matrix;
 void ComputeDistanceMatrix(const std::vector< Vector<double> >& vector_list, 
 							Matrix<BaseFloat>& distance_matrix);
@@ -239,12 +242,15 @@ void estimatePLDA(std::vector< Vector<double> > backgroundIvectors,
 BaseFloat sigmoidRectifier(BaseFloat logLikelihoodRatio);
 */
 
-BaseFloat SymetricKlDistance(const Vector<BaseFloat>& mean_vec_1, const Vector<BaseFloat>& mean_vec_2,
+BaseFloat SymetricKlDistanceDiag(const Vector<BaseFloat>& mean_vec_1, const Vector<BaseFloat>& mean_vec_2,
 								const Vector<BaseFloat>& cov_vec_1, const Vector<BaseFloat>& cov_vec_2);
 
+BaseFloat SymetricKlDistanceDiag(const Vector<double>& mean_vec_1, const Vector<double>& mean_vec_2,
+								const SpMatrix<double>& cov_vec_1, const SpMatrix<double> cov_vec_2);
 
-void ComputeIvector(const Matrix<BaseFloat>& feats, const Posterior& posteriors, 
-					const IvectorExtractor& extractor, Vector<double>& ivector_mean, SpMatrix<double>& ivector_covar);
-
+/*
+BaseFloat SymetricKlDistanceFull(const Vector<double>& mean_vec_1, const Vector<double>& mean_vec_2,
+								const SpMatrix<double>& cov_vec_1, const SpMatrix<double> cov_vec_2);
+*/
 }
 #endif

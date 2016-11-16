@@ -46,6 +46,7 @@ public:
 	void CollectFeatures(const Matrix<BaseFloat>& feats, Matrix<BaseFloat>& feats_collect) const;
 	void CollectPosteriors(const Posterior& posterior, Posterior& postprobs_collect) const;
 	Vector<double> Ivector();
+	SpMatrix<double> IvectorCovar();
 	void SetIvector(Vector<double>& ivec);
 	void SetIvector(Vector<double>& ivec, SpMatrix<double>& ivec_covar);
 	void SetIvector(IvectorInfo& ivec_info);
@@ -97,8 +98,8 @@ public:
 	static void MergeClusters(Cluster* clust1, Cluster* clust2);
 	BaseFloat DistanceOfTwoClustersGLR(const Matrix<BaseFloat> &feats, const Cluster* cluster1, const Cluster* cluster2);
 	BaseFloat DistanceOfTwoClustersKL2(const Matrix<BaseFloat> &feats, const Cluster* cluster1, const Cluster* cluster2); 
-	BaseFloat DistanceOfTwoClustersIvectorKL2(const Matrix<BaseFloat> &feats, const Cluster* cluster1, const Cluster* cluster2,
-															const Posterior& posterior, const IvectorExtractor& extractor);
+	//BaseFloat DistanceOfTwoClustersIvectorKL2(const Matrix<BaseFloat> &feats, const Cluster* cluster1, const Cluster* cluster2,
+	//														const Posterior& posterior, const IvectorExtractor& extractor);
 	void Write(const std::string& segment_dir);
 	void WriteToRttm(const std::string& rttm_outputdir);
 	Cluster* Head();

@@ -24,14 +24,14 @@ run_mfcc(){
     log_start "Extract MFCC features"
 
     mfccdir=mfcc
-    for x in $data; do
+    for x in $data $data_dev; do
       steps/make_mfcc.sh --cmd "$train_cmd" --nj 1 data/$x exp/make_mfcc/$x $mfccdir || exit 1;
       steps/compute_cmvn_stats.sh data/$x exp/make_mfcc/$x $mfccdir || exit 1;
     done
 
     log_end "Extract MFCC features"
 }
-#run_mfcc 
+run_mfcc 
 
 
 run_vad(){
@@ -42,7 +42,7 @@ run_vad(){
     done
     log_end "Finish VAD"
 }
-#run_vad
+run_vad
 
 
 make_ref(){
@@ -54,7 +54,7 @@ make_ref(){
 
     log_end "Generate Reference Segments/Labels/RTTM files"
 }
-#make_ref 
+make_ref 
 
 train_extractor(){
     ubmdim=256
@@ -70,11 +70,12 @@ train_extractor(){
       --ivector-dim $ivdim --num-iters 5 exp/full_ubm_${ubmdim}/final.ubm data/$data_dev \
       exp/extractor_$ubmdim || exit 1;
 }
-#train_extractor
+train_extractor
 
 test_ivectors(){
 
-    diar/test_ivector_score.sh --nj 1 exp/extractor_256 data/$data exp/ref/$data/labels exp/temp/test_ivectors 
+    diar/test_ivector_score.sh --nj 1 --apply-cmvn-utterance false --apply-cmvn-utterance false \
+	exp/extractor_256 data/$data exp/ref/$data/labels exp/temp/test_ivectors 
 }
 test_ivectors
 

@@ -100,9 +100,11 @@ int main(int argc, char *argv[]) {
         for (size_t i=0; i<loop_max;i++){
             Segment* ith_segment = speech_segments.KthSegment(i);
             Vector<double> i_ivector = ith_segment->Ivector();
+            SpMatrix<double> i_ivector_covar = ith_segment->IvectorCovar();
             for (size_t j=0; j<loop_max;j++){
                 Segment* jth_segment = speech_segments.KthSegment(j); 
                 Vector<double> j_ivector = jth_segment->Ivector();
+                SpMatrix<double> j_ivector_covar = jth_segment->IvectorCovar();
 
                 std::string i_label = ith_segment->Label();
                 std::string j_label = jth_segment->Label();
@@ -110,17 +112,21 @@ int main(int argc, char *argv[]) {
                 if (i != j && (i_label == j_label) && i_label != "nonspeech" &&
                          i_label != "overlap" && j_label != "nonspeech" && j_label != "overlap") {
                     BaseFloat dot_product = 1 - CosineDistance(i_ivector, j_ivector);
+                    BaseFloat kl2_dist = SymetricKlDistanceDiag(i_ivector, j_ivector, i_ivector_covar, j_ivector_covar);
                     BaseFloat distance = MahalanobisDistance(i_ivector, j_ivector, total_cov);
                     true_score += dot_product; true_count++;
                     KALDI_LOG << "TRUE Mahalanobis scores: " << distance;
+                    KALDI_LOG << "TRUE IvectorKL2 scores: " << kl2_dist;
                     KALDI_LOG << "TRUE Cosine scores: " << dot_product;
                 }
                 if (i != j && i_label != j_label && i_label != "nonspeech" &&
                         i_label != "overlap" && j_label != "nonspeech" && j_label != "overlap") {
                     BaseFloat dot_product =  1 - CosineDistance(i_ivector, j_ivector);
+                    BaseFloat kl2_dist = SymetricKlDistanceDiag(i_ivector, j_ivector, i_ivector_covar, j_ivector_covar);
                     BaseFloat distance = MahalanobisDistance(i_ivector, j_ivector, total_cov);
                     false_score += dot_product; false_count++;
                     KALDI_LOG << "FALSE Mahalanobis scores: " << distance;
+                    KALDI_LOG << "FALSE IvectorKL2 scores: " << kl2_dist;
                     KALDI_LOG << "FALSE Cosine scores: " << dot_product;
                 }
             }

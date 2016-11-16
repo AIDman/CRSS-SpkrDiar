@@ -183,6 +183,10 @@ Vector<double> Cluster::Ivector() {
 	return this->ivector_;
 }
 
+SpMatrix<double> Cluster::IvectorCovar() {
+	return this->ivector_covar_;
+}
+
 
 void Cluster::SetIvector(Vector<double>& ivect) {
 	this->ivector_ = ivect;
@@ -599,6 +603,8 @@ BaseFloat ClusterCollection::FindMinDistClustersIvector(const DiarConfig& config
 			}else{
 				if (config.ivector_dist_type == "CosineDistance") {
 					dist = 1 - CosineDistance(p1->Ivector(), p2->Ivector());
+				} else if(config.ivector_dist_type == "IvectorKL2") {
+					dist = SymetricKlDistanceDiag(p1->Ivector(), p2->Ivector(), p1->IvectorCovar(), p2->IvectorCovar());
 				}
 				dist_matrix[p1_idx][p2_idx] = dist;
 			}
@@ -653,10 +659,11 @@ BaseFloat ClusterCollection::DistanceOfTwoClustersKL2(const Matrix<BaseFloat> &f
 	Vector<BaseFloat> cov_vec_2(dim);
 	cluster2->ComputeCovDiag(feats, cov_vec_2);
 
-	return SymetricKlDistance(mean_vec_1, mean_vec_2, cov_vec_1, cov_vec_2);	
+	return SymetricKlDistanceDiag(mean_vec_1, mean_vec_2, cov_vec_1, cov_vec_2);	
 }
 
 
+/*
 BaseFloat ClusterCollection::DistanceOfTwoClustersIvectorKL2(const Matrix<BaseFloat> &feats, const Cluster* cluster1, const Cluster* cluster2,
 															const Posterior& posterior, const IvectorExtractor& extractor) {
 
@@ -678,7 +685,7 @@ BaseFloat ClusterCollection::DistanceOfTwoClustersIvectorKL2(const Matrix<BaseFl
 	//return  SymetricKlDistance(ivector_clust1_mean, ivector_clust2_mean, ivector_clust1_covar, ivector_clust2_covar);
 	return  CosineDistance(ivector_clust1_mean, ivector_clust2_mean);
 }
-
+*/
 
 void ClusterCollection::MergeClusters(Cluster* clust1, Cluster* clust2) {
 	std::vector<Segment> clust2_segments = clust2->AllSegments();
