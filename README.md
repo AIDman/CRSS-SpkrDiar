@@ -34,7 +34,7 @@ reproduce our results._
 ## Benchmark Pefformance
 We evaluate our performance on [AMI meeting corpus](http://groups.inf.ed.ac.uk/ami/download/) and comparing the numbers with those reported in [Pycasp](http://multimedia.icsi.berkeley.edu/scalable-big-data-analysis/pycasp/). Note: To evaluate only the clustering module, the numbers on CRSS-SpkDiar is on top of orace segmentation. We're currently working on to include segmentation.
 
-| Session       |      Pycasp   |   CRSS-SpkDiar  |
+| Session       |      Pycasp   |   CRSS-SpkDiar (run2.sh) |
 | ------------- | ------------- | -------------   | 
 IS1000a.Mix-Headset | 25.38 | 12.07|
 IS1001a.Mix-Headset | 32.34 | 43.64|
