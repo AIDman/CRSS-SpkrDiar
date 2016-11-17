@@ -73,8 +73,8 @@ int main(int argc, char *argv[]) {
             // length normalization
             BaseFloat norm = kth_ivector.Norm(2.0);
             BaseFloat ratio = norm / sqrt(kth_ivector.Dim()); // how much larger it is
-            //kth_ivector.Scale(1.0 / ratio);
-            //kth_ivector_covar.Scale(1.0 / ratio);
+            kth_ivector.Scale(1.0 / ratio);
+            kth_ivector_covar.Scale(1.0 / ratio);
 
             kth_segment->SetIvector(kth_ivector, kth_ivector_covar);
         }
