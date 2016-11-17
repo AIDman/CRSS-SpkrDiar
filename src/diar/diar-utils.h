@@ -248,9 +248,9 @@ BaseFloat SymetricKlDistanceDiag(const Vector<BaseFloat>& mean_vec_1, const Vect
 BaseFloat SymetricKlDistanceDiag(const Vector<double>& mean_vec_1, const Vector<double>& mean_vec_2,
 								const SpMatrix<double>& cov_vec_1, const SpMatrix<double> cov_vec_2);
 
-/*
+
 BaseFloat SymetricKlDistanceFull(const Vector<double>& mean_vec_1, const Vector<double>& mean_vec_2,
-								const SpMatrix<double>& cov_vec_1, const SpMatrix<double> cov_vec_2);
-*/
+								SpMatrix<double>& cov_mat_1, SpMatrix<double> cov_mat_2);
+
 }
 #endif

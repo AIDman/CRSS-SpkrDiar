@@ -60,6 +60,10 @@ void Segment::SetIvector(Vector<double>& ivec) {
 	this->ivector_ = ivec;
 }
 
+void Segment::SetIvector(Vector<double>& ivec, SpMatrix<double>& ivec_covar) {
+	this->ivector_ = ivec;
+	this->ivector_covar_ = ivec_covar;
+}
 
 void Segment::SetIvector(const Matrix<BaseFloat>& feats, 
 						   const Posterior& posterior, 

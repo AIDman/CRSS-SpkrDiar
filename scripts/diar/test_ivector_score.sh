@@ -74,17 +74,17 @@ delta_opts=`cat $srcdir/delta_opts 2>/dev/null`
 ## Set up features.
 if $apply_cmvn_sliding ; then
    echo "Sliding CMVN Applied"	
-   feats="ark,s,cs:add-deltas $delta_opts scp:$data/feats.scp ark:- | apply-cmvn-sliding --norm-vars=false --center=true --cmn-window=300 ark:- ark:- | select-voiced-frames ark:- scp,s,cs:$data/vad.scp ark:- |"
+   feats="ark,s,cs:add-deltas $delta_opts scp:$data/feats.scp ark:- | apply-cmvn-sliding --norm-vars=false --center=true --cmn-window=300 ark:- ark:- |"
 fi
 
 if $apply_cmvn_utterance ; then
    echo "Utterance level CMVN Applied"	
-   feats="ark,s,cs:copy-feats scp:$data/feats.scp ark:- | apply-cmvn --norm-vars=false scp:$data/cmvn.scp ark:- ark:- | add-deltas $delta_opts ark:- ark:- | select-voiced-frames ark:- scp,s,cs:$data/vad.scp ark:- |"
+   feats="ark,s,cs:copy-feats scp:$data/feats.scp ark:- | apply-cmvn --norm-vars=false scp:$data/cmvn.scp ark:- ark:- | add-deltas $delta_opts ark:- ark:- |"
 fi
 
 if ! $apply_cmvn_sliding  && ! $apply_cmvn_utterance ; then
    echo "No CMVN Applied"	
-   feats="ark,s,cs:add-deltas $delta_opts scp:$data/feats.scp ark:- | select-voiced-frames ark:- scp,s,cs:$data/vad.scp ark:- |"	
+   feats="ark,s,cs:add-deltas $delta_opts scp:$data/feats.scp ark:- |"	
 fi
 
 if [ $stage -le 0 ]; then
@@ -98,14 +98,18 @@ if [ $stage -le 0 ]; then
 
     #ivectorTest ark:$dir/tmp/labels.ark "$feats" ark,s,cs:$dir/posterior.JOB $srcdir/final.ie scp:exp/dev.iv/ivector.scp ark:data/dev/utt2spk || exit 1;
   $cmd JOB=1:$nj $dir/log/ivector_score.JOB.log \
-	ivectorTest ark:$dir/tmp/labels.ark "$feats" ark,s,cs:$dir/posterior.JOB $srcdir/final.ie || exit 1;
+	ivector-test ark:$dir/tmp/labels.ark "$feats" ark,s,cs:$dir/posterior.JOB $srcdir/final.ie || exit 1;
 
 fi
 
 
 # plot true/false hypotheses: (P(d|H0) and P(d|H1)):
-grep "TRUE Cosine scores" $dir/log/ivector_score.1.log > $dir/tmp/true_scores
-grep "FALSE Cosine scores" $dir/log/ivector_score.1.log > $dir/tmp/false_scores
+grep "TRUE DotProduct scores" $dir/log/ivector_score.1.log > $dir/tmp/true_scores
+grep "FALSE DotProduct scores" $dir/log/ivector_score.1.log > $dir/tmp/false_scores
+#grep "TRUE Cosine scores" $dir/log/ivector_score.1.log > $dir/tmp/true_scores
+#grep "FALSE Cosine scores" $dir/log/ivector_score.1.log > $dir/tmp/false_scores
+#grep "TRUE IvectorKL2 scores" $dir/log/ivector_score.1.log > $dir/tmp/true_scores
+#grep "FALSE IvectorKL2 scores" $dir/log/ivector_score.1.log > $dir/tmp/false_scores
 #grep "TRUE Mahalanobis scores" $dir/log/ivector_score.1.log > $dir/tmp/true_scores
 #grep "FALSE Mahalanobis scores" $dir/log/ivector_score.1.log > $dir/tmp/false_scores
 python local/plot_distributions.py $dir/tmp/true_scores $dir/tmp/false_scores

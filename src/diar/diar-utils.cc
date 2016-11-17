@@ -265,29 +265,33 @@ BaseFloat SymetricKlDistanceDiag(const Vector<double>& mean_vec_1, const Vector<
 		dist += 0.5 * ((cov_vec_1(i) * inv_cov_2(i) + cov_vec_2(i) * inv_cov_1(i)) + diff_mean(i) * diff_mean(i) * (inv_cov_1(i) + inv_cov_2(i)));
 	}
 
-	return (BaseFloat) dist;	
-}
-
-/*
-BaseFloat SymetricKlDistanceFull(const Vector<double>& mean_vec_1, const Vector<double>& mean_vec_2,
-								const SpMatrix<double>& cov_vec_1, const SpMatrix<double> cov_vec_2) {
-
-	int32 dim = mean_vec_1.Dim();
-	Vector<BaseFloat> diff_mean(dim);
-	diff_mean.AddVec(1.0, mean_vec_1);
-	diff_mean.AddVec(-1.0, mean_vec_2);
-	Vector<BaseFloat> inv_cov_1(cov_vec_1), inv_cov_2(cov_vec_2);
-	inv_cov_1.InvertElements();
-	inv_cov_2.InvertElements();
-
-	BaseFloat dist = 0.0;
-	for (size_t i = 0; i < dim; i++) {
-		dist += 0.5 * ((cov_vec_1(i) * inv_cov_2(i) + cov_vec_2(i) * inv_cov_1(i)) + diff_mean(i) * diff_mean(i) * (inv_cov_1(i) + inv_cov_2(i)));
-	}
-
 	return dist;	
 }
-*/
+
+
+BaseFloat SymetricKlDistanceFull(const Vector<double>& mean_vec_1, const Vector<double>& mean_vec_2,
+								SpMatrix<double>& cov_mat_1, SpMatrix<double> cov_mat_2) {
+
+	int32 dim = mean_vec_1.Dim();
+
+	double logdet1 = cov_mat_1.LogDet();
+	double logdet2 = cov_mat_2.LogDet();
+
+	SpMatrix<double> inv_cov_mat_1(cov_mat_1);
+	inv_cov_mat_1.Invert();
+	SpMatrix<double> inv_cov_mat_2(cov_mat_2);
+	inv_cov_mat_2.Invert();
+
+	Vector<double> diff_mean(dim);
+	diff_mean.AddVec(1.0, mean_vec_1);
+	diff_mean.AddVec(-1.0, mean_vec_2);
+
+	double dist12 = logdet2 - logdet1 -dim + TraceSpSp(cov_mat_1, inv_cov_mat_2) + VecSpVec(diff_mean, inv_cov_mat_2, diff_mean);
+	double dist21 = logdet1 - logdet2 -dim + TraceSpSp(cov_mat_2, inv_cov_mat_1) + VecSpVec(diff_mean, inv_cov_mat_1, diff_mean);
+
+	return 0.5*(dist12+dist21);	
+}
+
 
 }
 

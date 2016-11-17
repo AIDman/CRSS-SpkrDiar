@@ -36,7 +36,7 @@ feats="ark,s,cs:copy-feats scp:$data/feats.scp ark:- | apply-cmvn --norm-vars=tr
 if [ $stage -le 0 ]; then
 
   $cmd JOB=1:$nj $dir/log/segment_clustering.JOB.log \
-    segmentClustering --use-segment-label=$use_segment_label --min-update-segment=$min_update_segment --target-cluster-num=$target_cluster_num \
+    segment-clustering --use-segment-label=$use_segment_label --min-update-segment=$min_update_segment --target-cluster-num=$target_cluster_num \
 		--lambda=$lambda --dist-type=$dist_type $segdir/segments.scp "$feats" $dir/segments $dir/rttms || exit 1;
 
 fi

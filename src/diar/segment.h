@@ -32,7 +32,8 @@ public:
 	SpMatrix<double> IvectorCovar(); // return the i-vector uncertainty (covariance)
 	Vector<BaseFloat> Mask(); // return the mask
 	void SetLabel(std::string label);
-	void SetIvector(Vector<double>& ivec);	
+	void SetIvector(Vector<double>& ivec);
+	void SetIvector(Vector<double>& ivec, SpMatrix<double>& ivec_covar);
 	void SetIvector(const Matrix<BaseFloat>& feats, 
 						   const Posterior& posteriors, 
 						   const IvectorExtractor& extractor);	

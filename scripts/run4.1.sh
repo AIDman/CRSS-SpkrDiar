@@ -18,9 +18,8 @@ log_end(){
 set -e # exit on error
 
 ami_annotated_segment=/home/chengzhu/work/SpeechCorpus/ami_dir/segments
-session="demo" # data for diarization
-#data="is_sessions_file_1" # data for diarization
-data_dev="is_sessions"  # dev_data is for UBM, TV matrix training for i-vector
+eval_data="12_meeting" # data for diarization
+dev_data="ami_full"  # dev_data is for UBM, TV matrix training for i-vector
 
 run_mfcc(){
     log_start "Extract MFCC features"
@@ -38,7 +37,7 @@ run_mfcc(){
 
 run_vad(){
     log_start "Doing VAD"
-    for x in $data_dev; do
+    for x in $dev_data; do
      vaddir=exp/vad/$x
      diar/compute_vad_decision.sh --nj 1 data/$x $vaddir/log $vaddir
     done
@@ -50,7 +49,7 @@ run_vad(){
 make_ref(){
     log_start "Generate Reference Segments/Labels/RTTM files"
 
-    local/make_ami_ref.sh data/$data $ami_annotated_segment exp/ref/$session
+    local/make_ami_ref.sh data/$data $ami_annotated_segment exp/ref/$eval_data
 
     log_end "Generate Reference Segments/Labels/RTTM files"
 }
@@ -61,13 +60,13 @@ train_extractor(){
     ivdim=32
 
     sid/train_diag_ubm.sh --parallel-opts "" --nj 1 --apply-cmvn-utterance false --apply-cmvn-sliding false \
-    	 		--cmd "$train_cmd" data/$data_dev ${ubmdim} exp/diag_ubm_${ubmdim} || exit 1;
+    	 		--cmd "$train_cmd" data/$dev_data ${ubmdim} exp/diag_ubm_${ubmdim} || exit 1;
 
     sid/train_full_ubm.sh --nj 1 --apply-cmvn-utterance false --apply-cmvn-sliding false \
-			--cmd "$train_cmd" data/$data_dev exp/diag_ubm_${ubmdim} exp/full_ubm_${ubmdim} || exit 1;
+			--cmd "$train_cmd" data/$dev_data exp/diag_ubm_${ubmdim} exp/full_ubm_${ubmdim} || exit 1;
 
     sid/train_ivector_extractor.sh --nj 1 --cmd "$train_cmd" --num-gselect 15 \
-      --ivector-dim $ivdim --num-iters 5 exp/full_ubm_${ubmdim}/final.ubm data/$data_dev \
+      --ivector-dim $ivdim --num-iters 5 exp/full_ubm_${ubmdim}/final.ubm data/$dev_data \
       exp/extractor_$ubmdim || exit 1;
 }
 #train_extractor
@@ -76,19 +75,19 @@ bottom_up_clustering(){
     log_start "Bottom Up Clustering With Ivector"
 
     diar/segment_clustering_ivector.sh --nj 1 --apply-cmvn-utterance false --apply-cmvn-sliding false \
-       --ivector-dist-stop 0.7 exp/ref/$session/segments exp/extractor_256 data/$session exp/clustering_ivector/$session
+       --ivector-dist-stop 0.7 exp/ref/$eval_data/segments exp/extractor_256 data/$eval_data exp/clustering_ivector/$eval_data
 
     log_end "Bottom Up Clustering With Ivector"
 }
-bottom_up_clustering
+#bottom_up_clustering
 
 ilp_clustering(){
     log_start "ILP Clustering With Ivector"
 
     diar/construct_ilp_problem.sh --nj 1 --use-segment-label true --delta 0.5 --apply-cmvn-utterance false --apply-cmvn-sliding false \
-	exp/clustering_ivector/$session/segments exp/extractor_256 data/$session exp/clustering_ilp/$session	
+	exp/clustering_ivector/$eval_data/segments exp/extractor_256 data/$eval_data exp/clustering_ilp/$eval_data	
 
-    diar/ilp_clustering.sh --use-segment-label true exp/clustering_ivector/$session/segments exp/clustering_ilp/$session	
+    diar/ilp_clustering.sh --use-segment-label true exp/clustering_ivector/$eval_data/segments exp/clustering_ilp/$eval_data	
 
     log_end "ILP Clustering With Ivector"
 }
@@ -96,8 +95,8 @@ ilp_clustering
 
 compute_der(){
 	
-    diar/compute_DER.sh --sanity_check false exp/ref/$session/rttms exp/clustering_ilp/$session/rttms exp/result_DER/$session	
-    grep OVERALL exp/result_DER/$session/*.der && grep OVERALL exp/result_DER/$session/*.der | awk '{ sum += $7; n++ } END { if (n > 0) print "Avergage: " sum / n; }'
+    diar/compute_DER.sh --sanity_check false exp/ref/$eval_data/rttms exp/clustering_ilp/$eval_data/rttms exp/result_DER/$eval_data	
+    grep OVERALL exp/result_DER/$eval_data/*.der && grep OVERALL exp/result_DER/$eval_data/*.der | awk '{ sum += $7; n++ } END { if (n > 0) print "Avergage: " sum / n; }'
 }
 compute_der
 

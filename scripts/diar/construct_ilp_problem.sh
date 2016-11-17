@@ -75,7 +75,7 @@ if [ $stage -le 0 ]; then
 
   echo "delta is: $delta"
   $cmd JOB=1:$nj $dir/log/generate_ILP.JOB.log \
-     construct_ilp_problem --use-segment-label=$use_segment_label --delta=$delta $segdir/segments.scp \
+     construct-ilp-problem --use-segment-label=$use_segment_label --delta=$delta $segdir/segments.scp \
      "$feats" ark,s,cs:$dir/posterior.JOB $extractor_dir/final.ie $dir/ilps || exit 1;
 
 fi

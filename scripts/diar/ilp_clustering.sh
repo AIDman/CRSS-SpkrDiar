@@ -37,5 +37,5 @@ while read -r ilp_problem; do
 done < $dir/ilps/ilp.scp
 
 # Interperate ILP clustering result in GLPK format into rttm for compute DER infuture
-glpk_to_rttm --use-segment-label=$use_segment_label $dir/sols/sols.scp $segdir/segments.scp $dir/rttms
+glpk-to-rttm --use-segment-label=$use_segment_label $dir/sols/sols.scp $segdir/segments.scp $dir/rttms
 
