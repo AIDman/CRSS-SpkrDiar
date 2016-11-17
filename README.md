@@ -36,16 +36,16 @@ We evaluate our performance on [AMI meeting corpus](http://groups.inf.ed.ac.uk/a
 
 | Session       |      Pycasp   |   CRSS-SpkDiar  |
 | ------------- | ------------- | -------------   | 
-IS1000a.Mix-Headset | 25.38 | 10.03|
-IS1001a.Mix-Headset | 32.34 | 29.16|
-IS1001b.Mix-Headset | 10.57 | 6.12 |
-IS1001c.Mix-Headset | 28.40 | 10.88|
-IS1003b.Mix-Headset | 34.30 | 28.81|
-IS1003d.Mix-Headset | 50.75 | 40.32|
-IS1006b.Mix-Headset | 16.57 | 6.57 |
-IS1006d.Mix-Headset | 53.05 |48.16 |
-IS1008a.Mix-Headset | 1.65  |21.68 |
-IS1008b.Mix-Headset | 8.58  |2.47  |
-IS1008c.Mix-Headset | 9.30  |37.64 | 
-IS1008d.Mix-Headset | 26.27 |32.27 | 
-Average             | 24.76% |**22.84%** | 
+IS1000a.Mix-Headset | 25.38 | 12.07|
+IS1001a.Mix-Headset | 32.34 | 43.64|
+IS1001b.Mix-Headset | 10.57 | 12.16 |
+IS1001c.Mix-Headset | 28.40 | 6.17|
+IS1003b.Mix-Headset | 34.30 | 10.56|
+IS1003d.Mix-Headset | 50.75 | 24.67|
+IS1006b.Mix-Headset | 16.57 | 7.34 |
+IS1006d.Mix-Headset | 53.05 | 21.56 |
+IS1008a.Mix-Headset | 1.65  | 4.07 |
+IS1008b.Mix-Headset | 8.58  | 3.60  |
+IS1008c.Mix-Headset | 9.30  | 6.36 | 
+IS1008d.Mix-Headset | 26.27 | 5.99 | 
+Average             | 24.76% |**13.19%** | 
