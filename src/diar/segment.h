@@ -55,6 +55,7 @@ public:
 	SegmentCollection();
 	SegmentCollection(const std::string uttid);
 	SegmentCollection(const Vector<BaseFloat>& frame_labels, const std::string uttid);
+	SegmentCollection(const std::vector<int32>& frame_labels, const std::string uttid);
 
 	int32 Size() const;
 	std::string UttID();

@@ -42,7 +42,7 @@ run_vad(){
     done
     log_end "Finish VAD"
 }
-#run_vad
+run_vad
 
 
 make_ref(){
@@ -75,11 +75,14 @@ train_extractor(){
 vad_segmentation(){
    log_start "VAD based Segmentaton"
 
-   diar/vad_segmentation.sh --nj 1 --min-silence-len 30 data/$eval_data exp/vad_segmentation/$eval_data/log exp/vad_segmentation/$eval_data/segments  
-   	
+   diar/train_vad_gmm.sh --nj 1 data/$eval_data exp/vad
+   diar/convert_ali_to_vad.sh --nj 1 data/$eval_data exp/vad/lang exp/vad   	
    log_end "VAD based Segmentaton"
 }
 vad_segmentation
+
+mkdir -p exp/vad/segments
+int-vector-to-segment scp:exp/vad/vad/vad.scp exp/vad/segments
 
 bottom_up_clustering(){
     log_start "Bottom Up Clustering With Ivector"

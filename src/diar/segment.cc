@@ -160,6 +160,48 @@ SegmentCollection::SegmentCollection(const Vector<BaseFloat>& frame_labels, cons
 }
 
 
+SegmentCollection::SegmentCollection(const std::vector<int32>& frame_labels, const std::string uttid) {
+	// NOTE: The rules of input label is as follow
+	// -1 -> overlap
+	// 0 -> nonspeech
+	// 1,2,..,n -> speaker1, speaker2, speakern   
+	// Other conditions may be added in the future.
+	this->uttid_ = uttid;
+	int32 state;
+	int32 prevState;
+	std::vector<int32> segmentStartEnd;
+	int32 startSeg = 0;
+	int32 endSeg = 0;
+	segmentStartEnd.push_back(startSeg);
+	segmentStartEnd.push_back(endSeg);
+	for (size_t i=1; i<frame_labels.size(); i++) {
+		state = frame_labels[i];
+		prevState = frame_labels[i-1];
+		if (state != prevState || i==frame_labels.size()-1) {
+			if (i==frame_labels.size()-1) {
+				i++;
+			}
+			if (prevState == -1) {
+				segmentStartEnd[1] = i-1;
+				Segment* new_seg = new Segment("overlap",segmentStartEnd[0],segmentStartEnd[1]);
+				this->segment_list_.push_back(new_seg);
+				segmentStartEnd[0] = i;
+			}else if (prevState == 0) {
+				segmentStartEnd[1] = i-1;
+				Segment* new_seg = new Segment("nonspeech",segmentStartEnd[0],segmentStartEnd[1]);
+				this->segment_list_.push_back(new_seg);
+				segmentStartEnd[0] = i;				
+			}else if (prevState > 0) {
+				std:: string stateStr = numberToString(prevState);
+				segmentStartEnd[1] = i-1;
+				Segment* new_seg = new Segment(stateStr,segmentStartEnd[0],segmentStartEnd[1]);
+				this->segment_list_.push_back(new_seg);
+				segmentStartEnd[0] = i;
+			} 
+		}
+	}
+}
+
 std::string SegmentCollection::UttID() {
 	return this->uttid_;
 }
