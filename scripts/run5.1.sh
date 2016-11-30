@@ -37,12 +37,12 @@ run_mfcc(){
 run_vad(){
     log_start "Doing VAD"
     for x in $dev_data $eval_data; do
-     vaddir=exp/vad/$x
+     vaddir=exp/vad_energy/$x
      diar/compute_vad_decision.sh --nj 1 data/$x $vaddir/log $vaddir
     done
     log_end "Finish VAD"
 }
-run_vad
+#run_vad
 
 
 make_ref(){
@@ -75,40 +75,27 @@ train_extractor(){
 vad_segmentation(){
    log_start "VAD based Segmentaton"
 
-   diar/train_vad_gmm.sh --nj 1 data/$eval_data exp/vad
-   diar/convert_ali_to_vad.sh --nj 1 data/$eval_data exp/vad/lang exp/vad   	
+   diar/train_vad_gmm.sh --nj 1 data/$eval_data exp/vad/$eval_data
+   diar/convert_ali_to_vad.sh --nj 1 data/$eval_data exp/vad/$eval_data/lang exp/vad/$eval_data   	
+   mkdir -p exp/vad/$eval_data/segments
+   int-vector-to-segment scp:exp/vad/$eval_data/vad/vad.scp exp/vad/$eval_data/segments
    log_end "VAD based Segmentaton"
 }
 vad_segmentation
-
-mkdir -p exp/vad/segments
-int-vector-to-segment scp:exp/vad/vad/vad.scp exp/vad/segments
 
 bottom_up_clustering(){
     log_start "Bottom Up Clustering With Ivector"
 
     diar/segment_clustering_ivector.sh --nj 1 --apply-cmvn-utterance false --apply-cmvn-sliding false \
-       --ivector-dist-stop 0.7 exp/ref/$eval_data/segments exp/extractor_256 data/$eval_data exp/clustering_ivector/$eval_data
+       --ivector-dist-stop 0.7 exp/vad/$eval_data/segments exp/extractor_256 data/$eval_data exp/clustering_ivector/$eval_data
 
     log_end "Bottom Up Clustering With Ivector"
 }
 #bottom_up_clustering
 
-ilp_clustering(){
-    log_start "ILP Clustering With Ivector"
-
-    diar/construct_ilp_problem.sh --nj 1 --use-segment-label true --delta 0.9 --apply-cmvn-utterance false --apply-cmvn-sliding false \
-	exp/clustering_ivector/$eval_data/segments exp/extractor_256 data/$eval_data exp/clustering_ilp/$eval_data	
-
-    diar/ilp_clustering.sh --use-segment-label true exp/clustering_ivector/$eval_data/segments exp/clustering_ilp/$eval_data	
-
-    log_end "ILP Clustering With Ivector"
-}
-#ilp_clustering
-
 compute_der(){
 	
-    diar/compute_DER.sh --sanity_check false exp/ref/$eval_data/rttms exp/clustering_ilp/$eval_data/rttms exp/result_DER/$eval_data	
+    diar/compute_DER.sh --sanity_check false exp/ref/$eval_data/rttms exp/clustering_ivector/$eval_data/rttms exp/result_DER/$eval_data	
     grep OVERALL exp/result_DER/$eval_data/*.der && grep OVERALL exp/result_DER/$eval_data/*.der | awk '{ sum += $7; n++ } END { if (n > 0) print "Avergage: " sum / n; }'
 }
 #compute_der

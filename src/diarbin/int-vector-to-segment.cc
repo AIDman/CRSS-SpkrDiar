@@ -30,6 +30,7 @@ int main(int argc, char *argv[]) {
     for (; !label_reader.Done(); label_reader.Next()) {
         const std::vector<int32> label_vec = label_reader.Value();
         SegmentCollection all_segments(label_vec, label_reader.Key());
-        all_segments.Write(segments_dirname);
+        SegmentCollection speech_segments = all_segments.GetSpeechSegments();
+        speech_segments.Write(segments_dirname);
     }
 }
