@@ -59,7 +59,7 @@ if ! $get_whole_vad; then
   if [ $stage -le 1 ]; then
     $cmd JOB=1:$num_jobs $dir/log/combine_vad.JOB.log \
       copy-int-vector "ark:gunzip -c $tmpdir/vad.JOB.ark.gz |" \
-      ark,scp:$dir/vad.JOB.ark,$dir/vad.JOB.scp || exit 1
+      ark,t,scp:$dir/vad.JOB.ark,$dir/vad.JOB.scp || exit 1
 
     for n in `seq $num_jobs`; do 
       cat $dir/vad.$n.scp

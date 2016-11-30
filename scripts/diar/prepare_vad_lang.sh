@@ -172,12 +172,25 @@ ln -s L.fst $dir/L_disambig.fst
 
 num_words=`cat $dir/words.txt | wc -l 2> /dev/null` || exit 1
 #prob=`perl -e "print log($num_words) / log(10)"`
-prob=`perl -e "print log($[num_words+1])"`
+#prob=`perl -e "print log($[num_words+1])"`
+prob_speech=`perl -e "print log($[num_words+1])"`
+prob_sil=`perl -e "print log($[num_words+1])"`
 while IFS=$'\n' read line; do
   word=`echo $line | awk '{print $1}'`
-  echo 0 0 $word $word $prob
-done < $dir/words.txt > $tmpdir/G.txt
-echo 0 $prob >> $tmpdir/G.txt
+  echo 0 0 $word $word $prob_sil
+done < $dir/phones/silence.txt > $tmpdir/G.txt
+
+while IFS=$'\n' read line; do
+  word=`echo $line | awk '{print $1}'`
+  echo 0 0 $word $word $prob_speech
+done < $dir/phones/nonsilence.txt >> $tmpdir/G.txt
+echo 0 $prob_sil >> $tmpdir/G.txt
+
+#while IFS=$'\n' read line; do
+#  word=`echo $line | awk '{print $1}'`
+#  echo 0 0 $word $word $prob
+#done < $dir/words.txt > $tmpdir/G.txt
+#echo 0 $prob >> $tmpdir/G.txt
 
 fstcompile --isymbols=$dir/words.txt --osymbols=$dir/words.txt \
   --keep_isymbols=false --keep_osymbols=false \

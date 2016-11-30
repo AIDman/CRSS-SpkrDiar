@@ -16,7 +16,7 @@ num_iters=20
 impr_thres=0.002
 stage=-10
 cleanup=true
-select_top_frames=false
+select_top_frames=true
 top_frames_threshold=0.16
 bottom_frames_threshold=0.04
 # End configuration section.
@@ -148,7 +148,6 @@ if [ $stage -le 0 ]; then
   done
 
   rm -f $dir/final.mdl 2>/dev/null || true
-  #cp $dir/$x.mdl $dir/final.mdl 
   
   gmm-copy --binary=false $dir/${x}.mdl $dir/${x}.txt.mdl 
   copy-transition-model --binary=false $dir/trans_test.mdl $dir/final.mdl
