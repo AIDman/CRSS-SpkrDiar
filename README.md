@@ -31,7 +31,7 @@ reproduce our results._
   - Kaldi
   - GLPK (if only you want to try ILP)
   
-## Benchmark Pefformance
+## Benchmark Performance
 We evaluate our performance on [AMI meeting corpus](http://groups.inf.ed.ac.uk/ami/download/) and comparing the numbers with those reported in [Pycasp](http://multimedia.icsi.berkeley.edu/scalable-big-data-analysis/pycasp/) from ICSI. Note: To evaluate only the clustering module, the numbers on CRSS-SpkDiar is on top of orace segmentation. We're currently working on to include segmentation.
 
 | Session       |      Pycasp   |   CRSS-SpkDiar (run2.sh) |
