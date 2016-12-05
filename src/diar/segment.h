@@ -64,6 +64,7 @@ public:
 	Segment* KthSegment(int32 k);
 	SegmentCollection GetSpeechSegments();
 	SegmentCollection GetLargeSegments(int32 min_seg_len);
+	void FixNonValidSegments(int32 num_samples);
 	/*
 	void ExtractIvectors(const Matrix<BaseFloat>& feats,
 								 const Posterior& posterior,

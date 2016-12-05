@@ -79,7 +79,7 @@ bottom_up_clustering(){
 
     log_end "Bottom Up Clustering With Ivector"
 }
-#bottom_up_clustering
+bottom_up_clustering
 
 ilp_clustering(){
     log_start "ILP Clustering With Ivector"

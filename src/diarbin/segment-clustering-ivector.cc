@@ -65,6 +65,9 @@ int main(int argc, char *argv[]) {
 
             // read features
             Matrix<BaseFloat> feats = feature_reader.Value(utt_segments.UttID());
+
+            // the last segment, might exceeds total featuures lengh
+            speech_segments.FixNonValidSegments(feats.NumCols());
  
             // read posterior
             Posterior posteriors = posterior_reader.Value(utt_segments.UttID());

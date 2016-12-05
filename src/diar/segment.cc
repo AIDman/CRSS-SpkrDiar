@@ -295,6 +295,11 @@ SegmentCollection SegmentCollection::GetLargeSegments(int32 min_seg_len) {
 	return largeSegments;
 }
 
+void SegmentCollection::FixNonValidSegments(int32 num_samples) {
+	if(this->segment_list_.back()->EndIdx() > num_samples-1) {
+		segment_list_.pop_back();
+	}
+}
 
 Segment* SegmentCollection::KthSegment(int32 k) {
 	return segment_list_[k];

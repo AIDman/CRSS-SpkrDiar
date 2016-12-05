@@ -59,10 +59,13 @@ int main(int argc, char *argv[]) {
             utt_segments.Read(line);
 
             // read features
-            const Matrix<BaseFloat> &feats = feature_reader.Value(utt_segments.UttID());
+            const Matrix<BaseFloat> feats = feature_reader.Value(utt_segments.UttID());
             SegmentCollection speech_segments = utt_segments.GetSpeechSegments();
             ClusterCollection segment_clusters;
  
+             // the last segment, might exceeds total featuures lengh
+            speech_segments.FixNonValidSegments(feats.NumCols());
+
             if (use_segment_label) {
                 KALDI_LOG << "Clusters intitiats from previously clusterred segments"; 
                 segment_clusters.InitFromLabeledSegments(speech_segments);

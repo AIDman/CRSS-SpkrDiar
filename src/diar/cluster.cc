@@ -461,7 +461,6 @@ void ClusterCollection::BottomUpClustering(const Matrix<BaseFloat> &feats, const
 
 
 void ClusterCollection::BottomUpClusteringIvector(IvectorInfo& ivec_info, const DiarConfig& config) {
-
 	// Compute i-vector for each cluster
 	this->SetIvector(ivec_info);
 
