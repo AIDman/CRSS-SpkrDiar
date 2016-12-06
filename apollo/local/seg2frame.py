@@ -16,12 +16,12 @@ def time2frame(s,e,inc):
     return s_f, e_f
 
 if __name__=='__main__':
-    fs = 16000.
     inc = 0.01
     win = 0.025
     filename = sys.argv[1]
     filenameOutput = sys.argv[2]
-    PLOT = int(sys.argv[3])
+    fs = float(sys.argv[3])
+    PLOT = int(sys.argv[4])
     fin = open(filename)
     fout = open(filenameOutput,'w')
     session_txt = []

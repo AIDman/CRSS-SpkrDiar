@@ -43,6 +43,6 @@ while read ref <&3 && read match<&4; do
 
 	name=`basename $ref .rttm`
 
-	perl local/md-eval-v21.pl -r $ref -s $match > $result_dir/${name}.der 
+	perl local/md-eval-v21.pl -m -c 0.25 -r $ref -s $match > $result_dir/${name}.der 
  
 done 3<$ref_dir/rttms.scp 4<$match_dir/rttms.scp

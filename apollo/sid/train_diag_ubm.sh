@@ -33,6 +33,7 @@ parallel_opts="-pe smp 32"
 delta_window=3
 delta_order=2
 
+apply_vad=true
 apply_cmvn_utterance=false
 apply_cmvn_sliding=false
 
@@ -87,7 +88,7 @@ sdata=$data/split$nj
 mkdir -p $dir/log
 utils/split_data.sh $data $nj || exit 1;
 
-for f in $data/feats.scp $data/vad.scp; do
+for f in $data/feats.scp; do
    [ ! -f $f ] && echo "$0: expecting file $f to exist" && exit 1
 done
 
@@ -97,18 +98,30 @@ echo $delta_opts > $dir/delta_opts
 # Note: there is no point subsampling all_feats, because gmm-global-init-from-feats
 # effectively does subsampling itself (it keeps a random subset of the features).
 if $apply_cmvn_sliding ; then
-   echo "Sliding CMVN Applied"	
-   all_feats="ark,s,cs:add-deltas $delta_opts scp:$data/feats.scp ark:- | apply-cmvn-sliding --norm-vars=false --center=true --cmn-window=300 ark:- ark:- | select-voiced-frames ark:- scp,s,cs:$data/vad.scp ark:- |"
+   echo "Sliding CMVN Applied"
+   if $apply_vad; then	
+      all_feats="ark,s,cs:add-deltas $delta_opts scp:$data/feats.scp ark:- | apply-cmvn-sliding --norm-vars=false --center=true --cmn-window=300 ark:- ark:- | select-voiced-frames ark:- scp,s,cs:$data/vad.scp ark:- |"
+   else 
+      all_feats="ark,s,cs:add-deltas $delta_opts scp:$data/feats.scp ark:- | apply-cmvn-sliding --norm-vars=false --center=true --cmn-window=300 ark:- ark:- |"
+   fi
 fi
 
 if $apply_cmvn_utterance ; then
-   echo "Utterance level CMVN Applied"	
-   all_feats="ark,s,cs:copy-feats scp:$data/feats.scp ark:- | apply-cmvn --norm-vars=false scp:$data/cmvn.scp ark:- ark:- | add-deltas $delta_opts ark:- ark:- | select-voiced-frames ark:- scp,s,cs:$data/vad.scp ark:- |"
+   echo "Utterance level CMVN Applied"
+   if $apply_vad; then	
+     all_feats="ark,s,cs:copy-feats scp:$data/feats.scp ark:- | apply-cmvn --norm-vars=false scp:$data/cmvn.scp ark:- ark:- | add-deltas $delta_opts ark:- ark:- | select-voiced-frames ark:- scp,s,cs:$data/vad.scp ark:- |"
+   else
+     all_feats="ark,s,cs:copy-feats scp:$data/feats.scp ark:- | apply-cmvn --norm-vars=false scp:$data/cmvn.scp ark:- ark:- | add-deltas $delta_opts ark:- ark:- |"
+   fi
 fi
 
 if ! $apply_cmvn_sliding  && ! $apply_cmvn_utterance ; then
    echo "No CMVN Applied"	
-   all_feats="ark,s,cs:add-deltas $delta_opts scp:$data/feats.scp ark:- | select-voiced-frames ark:- scp,s,cs:$data/vad.scp ark:- |"	
+   if $apply_vad; then	
+     all_feats="ark,s,cs:add-deltas $delta_opts scp:$data/feats.scp ark:- | select-voiced-frames ark:- scp,s,cs:$data/vad.scp ark:- |"
+   else	
+     all_feats="ark,s,cs:add-deltas $delta_opts scp:$data/feats.scp ark:- |"
+   fi
 fi
 
 num_gauss_init=$(perl -e "print int($initial_gauss_proportion * $num_gauss); ");

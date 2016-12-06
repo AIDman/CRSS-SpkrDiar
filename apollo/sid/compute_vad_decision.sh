@@ -53,7 +53,7 @@ utils/split_data.sh $data $nj || exit 1;
 sdata=$data/split$nj;
 
 $cmd JOB=1:$nj $logdir/vad_${name}.JOB.log \
-  compute-vad --config=$vad_config scp:$sdata/JOB/feats.scp ark,scp:$vaddir/vad_${name}.JOB.ark,$vaddir/vad_${name}.JOB.scp \
+  compute-vad --config=$vad_config scp:$sdata/JOB/feats.scp ark,t,scp:$vaddir/vad_${name}.JOB.ark,$vaddir/vad_${name}.JOB.scp \
   || exit 1;
 
 for ((n=1; n<=nj; n++)); do

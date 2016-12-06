@@ -1,0 +1,1 @@
+FD_SPEECH-01 sox --ignore-length /home/chengzhu/work/NASA/Apollo11_Diar_Corpus_VAD/FD_SPEECH/FD_SPEECH-01.wav -t wav - |

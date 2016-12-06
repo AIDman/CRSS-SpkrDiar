@@ -28,7 +28,8 @@ int main(int argc, char *argv[]) {
     SequentialBaseFloatVectorReader label_reader(label_rspecifier);
 
     for (; !label_reader.Done(); label_reader.Next()) {
-        SegmentCollection allSegments(label_reader.Value(), label_reader.Key());
-        allSegments.Write(segments_dirname);
+        SegmentCollection all_segments(label_reader.Value(), label_reader.Key());
+        SegmentCollection speech_segments = all_segments.GetSpeechSegments();
+        speech_segments.Write(segments_dirname);
     }
 }

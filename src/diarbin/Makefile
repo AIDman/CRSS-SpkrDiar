@@ -7,7 +7,8 @@ KALDI_DIR = /home/chengzhu/work/Toolhouse/kaldi-trunk
 EXTRA_CXXFLAGS = -Wno-sign-compare -I${KALDI_DIR}/src -std=c++11
 include ${KALDI_DIR}/src/kaldi.mk
 
-BINFILES = label-to-segment glpk-to-rttm label-to-rttm segment-clustering segment-clustering-ivector ivector-test construct-ilp-problem select-top-frames select-voiced-frames-v2 int-vector-to-segment
+BINFILES = label-to-segment glpk-to-rttm label-to-rttm segment-clustering segment-clustering-ivector ivector-test construct-ilp-problem \
+           select-top-frames select-voiced-frames-v2 int-vector-to-segment compute-viterbi-vad-from-frame-likes
 
 OBJFILES = 
 
