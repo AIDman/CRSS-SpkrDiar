@@ -57,8 +57,8 @@ def plot_vad(wav_fn, vad_fn, winlen, hoplen, mode):
             wav_fn: wav.scp file
             vad_fn: VAD scores for each utterance in ark,t format
             """
-        vad_files = read_int_ark_vad(vad_fn)
-        #vad_files = read_ark_vad(vad_fn)
+        #vad_files = read_int_ark_vad(vad_fn)
+        vad_files = read_ark_vad(vad_fn)
         fwav = open(wav_fn)
         wavs = {}
         for i in fwav:
@@ -70,7 +70,7 @@ def plot_vad(wav_fn, vad_fn, winlen, hoplen, mode):
             fs, s = wavfile.read(wavs[uttid])
             N1 = 0
             #N2 = N1 + len(vad_samples)
-            N2 = N1 + 2500000
+            N2 = N1 + 16000*60*5
             s = s[N1:N2]
             pylab.plot(s/float(max(abs(s))))
             pylab.plot(vad_samples[N1:N2]/float(max(abs(vad_samples[N1:N2])))+0.01,'r')
@@ -82,4 +82,4 @@ if __name__ == '__main__':
     wav_fn = sys.argv[1]
     vad_fn = sys.argv[2]
     fs = int(sys.argv[3])
-    plot_vad(wav_fn, vad_fn, 400, 160, 'ark')
+    plot_vad(wav_fn, vad_fn, fs*0.025, fs*0.01, 'ark')

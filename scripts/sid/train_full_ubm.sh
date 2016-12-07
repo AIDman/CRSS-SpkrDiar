@@ -18,6 +18,7 @@ remove_low_count_gaussians=true # set this to false if you need #gauss to stay f
 cleanup=true
 apply_cmvn_utterance=false
 apply_cmvn_sliding=false
+apply_vad=true
 # End configuration section.
 
 echo "$0 $@"  # Print the command line for logging
@@ -52,7 +53,7 @@ data=$1
 srcdir=$2
 dir=$3
 
-for f in $data/feats.scp $data/vad.scp; do
+for f in $data/feats.scp; do
   [ ! -f $f ] && echo "No such file $f" && exit 1;
 done
 
@@ -69,18 +70,30 @@ fi
 
 ## Set up features.
 if $apply_cmvn_sliding ; then
-   echo "Sliding CMVN Applied"	
-   feats="ark,s,cs:add-deltas $delta_opts scp:$data/feats.scp ark:- | apply-cmvn-sliding --norm-vars=false --center=true --cmn-window=300 ark:- ark:- | select-voiced-frames ark:- scp,s,cs:$data/vad.scp ark:- |"
+   echo "Sliding CMVN Applied"
+   if $apply_vad; then	
+     feats="ark,s,cs:add-deltas $delta_opts scp:$data/feats.scp ark:- | apply-cmvn-sliding --norm-vars=false --center=true --cmn-window=300 ark:- ark:- | select-voiced-frames ark:- scp,s,cs:$data/vad.scp ark:- |"
+   else
+     feats="ark,s,cs:add-deltas $delta_opts scp:$data/feats.scp ark:- | apply-cmvn-sliding --norm-vars=false --center=true --cmn-window=300 ark:- ark:- |"
+   fi
 fi
 
 if $apply_cmvn_utterance ; then
-   echo "Utterance level CMVN Applied"	
-   feats="ark,s,cs:copy-feats scp:$data/feats.scp ark:- | apply-cmvn --norm-vars=false scp:$data/cmvn.scp ark:- ark:- | add-deltas $delta_opts ark:- ark:- | select-voiced-frames ark:- scp,s,cs:$data/vad.scp ark:- |"
+   echo "Utterance level CMVN Applied"
+   if $apply_vad; then	
+     feats="ark,s,cs:copy-feats scp:$data/feats.scp ark:- | apply-cmvn --norm-vars=false scp:$data/cmvn.scp ark:- ark:- | add-deltas $delta_opts ark:- ark:- | select-voiced-frames ark:- scp,s,cs:$data/vad.scp ark:- |"
+   else
+     feats="ark,s,cs:copy-feats scp:$data/feats.scp ark:- | apply-cmvn --norm-vars=false scp:$data/cmvn.scp ark:- ark:- | add-deltas $delta_opts ark:- ark:- |"
+   fi
 fi
 
 if ! $apply_cmvn_sliding  && ! $apply_cmvn_utterance ; then
    echo "No CMVN Applied"	
-   feats="ark,s,cs:add-deltas $delta_opts scp:$data/feats.scp ark:- | select-voiced-frames ark:- scp,s,cs:$data/vad.scp ark:- |"	
+   if $apply_vad; then	
+     feats="ark,s,cs:add-deltas $delta_opts scp:$data/feats.scp ark:- | select-voiced-frames ark:- scp,s,cs:$data/vad.scp ark:- |"
+   else	
+     feats="ark,s,cs:add-deltas $delta_opts scp:$data/feats.scp ark:- |"
+   fi
 fi
 
 if [ $stage -le -2 ]; then
