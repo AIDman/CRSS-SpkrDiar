@@ -15,15 +15,15 @@
 
 namespace kaldi{
 
-class ClusterCollectionConstrained : public ClusterCollection {
+class ClusterCollectionConstraint : public ClusterCollection {
 public:
-	ClusterCollectionConstrained();
-	ClusterCollectionConstrained(SegmentCollection* segments);
+	ClusterCollectionConstraint();
+	ClusterCollectionConstraint(SegmentCollection* segments);
 
 	void IvectorHacExploreFarthestFirstSearch(IvectorInfo& ivec_info, const DiarConfig& config, const int32& max_query);
 	//void IvectorHacExploreFromClusterMedians();
 	void InitClustersWithExploredClusters();
-	void ConstrainedBottomUpClusteringIvector(IvectorInfo& ivec_info, const DiarConfig& config);
+	void ConstraintBottomUpClusteringIvector(IvectorInfo& ivec_info, const DiarConfig& config);
 
 private:
 	SegmentCollection* segments_;

@@ -1,5 +1,13 @@
 #!/bin/bash
 
+'''
+exp/result_DER/FD/FD_1.der: OVERALL SPEAKER DIARIZATION ERROR = 29.16 percent `(ALL)
+exp/result_DER/FD/FD_2.der: OVERALL SPEAKER DIARIZATION ERROR = 46.00 percent `(ALL)
+exp/result_DER/FD/FD_3.der: OVERALL SPEAKER DIARIZATION ERROR = 25.68 percent `(ALL)
+exp/result_DER/FD/FD_4.der: OVERALL SPEAKER DIARIZATION ERROR = 26.87 percent `(ALL)
+exp/result_DER/FD/FD_5.der: OVERALL SPEAKER DIARIZATION ERROR = 50.09 percent `(ALL)
+'''
+
 log_start(){
   echo "#####################################################################"
   echo "Spawning *** $1 *** on" `date` `hostname`

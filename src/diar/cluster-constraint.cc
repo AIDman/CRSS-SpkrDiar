@@ -6,13 +6,13 @@
 
 namespace kaldi {
 
-ClusterCollectionConstrained::ClusterCollectionConstrained(SegmentCollection* segments) {
+ClusterCollectionConstraint::ClusterCollectionConstraint(SegmentCollection* segments) {
 	ClusterCollection();
 	this->segments_ = segments;
 	this->uttid_ = segments->UttID();
 }
 
-void ClusterCollectionConstrained::IvectorHacExploreFarthestFirstSearch(IvectorInfo& ivec_info, const DiarConfig& config, const int32& max_query ) {
+void ClusterCollectionConstraint::IvectorHacExploreFarthestFirstSearch(IvectorInfo& ivec_info, const DiarConfig& config, const int32& max_query) {
 	int32 nsegs = segments_->Size();
 
 	// Compute and assign i-vectors for each segments
@@ -71,6 +71,7 @@ void ClusterCollectionConstrained::IvectorHacExploreFarthestFirstSearch(IvectorI
 
     int32 query_count=0, farthest_seg_id=0;
     while(query_count <= max_query) {
+    	std::string farthest_seg_label;
         BaseFloat farthest_dist = -10000.0;
         for(size_t i = 0; i < nsegs; i++) {
             BaseFloat dist = 0.0;
@@ -87,38 +88,51 @@ void ClusterCollectionConstrained::IvectorHacExploreFarthestFirstSearch(IvectorI
                 farthest_dist = dist;
                 farthest_seg_id = i;
             }
-            std::string farthest_seg_label = this->segments_->KthSegment(farthest_seg_id)->Label();
+            farthest_seg_label = this->segments_->KthSegment(farthest_seg_id)->Label();
+        }
 
-            bool match_existing_cluster = false;
-            for(size_t c = 0; c < this->explored_clusters_.size(); c++) {
-                query_count++;
-                std::string cth_cluster_label = this->segments_->KthSegment(this->explored_clusters_[c][0])->Label();                
-                if(farthest_seg_label == cth_cluster_label) {
-                    this->explored_clusters_[c].push_back(farthest_seg_id);
-                    match_existing_cluster = true;
-                    break;
-                }
-            }
-
-            if(!match_existing_cluster) {
-                std::vector<int32> new_cluster;
-                new_cluster.push_back(farthest_seg_id);
-                this->explored_clusters_.push_back(new_cluster);
+        bool match_existing_cluster = false;
+        for(size_t c = 0; c < this->explored_clusters_.size(); c++) {
+            query_count++;
+            std::string cth_cluster_label = this->segments_->KthSegment(this->explored_clusters_[c][0])->Label();                
+            if(farthest_seg_label == cth_cluster_label) {
+            	KALDI_LOG << "Belongs To Existing Cluster : " << farthest_seg_label << "Query Count " << query_count;
+                this->explored_clusters_[c].push_back(farthest_seg_id);
+                match_existing_cluster = true;
+                break;
             }
         }
+
+        if(!match_existing_cluster) {
+        	KALDI_LOG << "Belongs To New Cluster : " << farthest_seg_label  << "Query Count " << query_count;
+            std::vector<int32> new_cluster;
+            new_cluster.push_back(farthest_seg_id);
+            this->explored_clusters_.push_back(new_cluster);
+        }        
+    }
+
+    KALDI_LOG << "Finished Farthest First Search Exploring.";
+    KALDI_LOG << "A Total of " << this->explored_clusters_.size() << " clusters are explored:";
+    for(int k = 0; k < this->explored_clusters_.size(); k++) {
+    	KALDI_LOG << "Cluster" << k << "found " << this->explored_clusters_[k].size() << " segments";
     }
 
     return;
 }
 
-void ClusterCollectionConstrained::InitClustersWithExploredClusters() {
+void ClusterCollectionConstraint::IvectorHacConsolidate(IvectorInfo& ivec_info, const DiarConfig& config, const int32& max_query_per_cluster) {
+	
+}
+
+void ClusterCollectionConstraint::InitClustersWithExploredClusters() {
  	KALDI_ASSERT(explored_clusters_.size() > 0);
  	std::unordered_map<int32, int32> clustered_segments;
 	Cluster* prev_cluster = NULL;
 	Cluster* new_cluster = NULL; 
- 	for(size_t i = 0; i < explored_clusters_.size(); i++) {
- 		for(size_t j = 0; j < explored_clusters_[i].size(); j++) {
- 			int32 segment_idx = explored_clusters_[i][j];
+
+ 	for(size_t i = 0; i < this->explored_clusters_.size(); i++) {
+ 		for(size_t j = 0; j < this->explored_clusters_[i].size(); j++) {
+ 			int32 segment_idx = this->explored_clusters_[i][j];
  			clustered_segments[segment_idx] = 1;
  			if(i == 0 && j == 0) {
  				Cluster* head_cluster = new Cluster(*(this->segments_->KthSegment(segment_idx)));
@@ -138,7 +152,7 @@ void ClusterCollectionConstrained::InitClustersWithExploredClusters() {
  				new_cluster->prev = prev_cluster;
  				prev_cluster = new_cluster;
  			} else{
- 				new_cluster->AddSegment(*(this->segments_->KthSegment(segment_idx)));
+ 				prev_cluster->AddSegment(*(this->segments_->KthSegment(segment_idx)));
  			}
  		}
  	}
@@ -149,15 +163,25 @@ void ClusterCollectionConstrained::InitClustersWithExploredClusters() {
 		 	this->num_clusters_++;
  			prev_cluster->next = new_cluster;
  			new_cluster->prev = prev_cluster;
+ 			prev_cluster = new_cluster;
  		} 
  	}
 
  	new_cluster->next=NULL;
 
+ 	Cluster* curr = this->head_cluster_;
+ 	int32 ct = 0;
+ 	KALDI_LOG << "Total Cluster Number: " << this->num_clusters_;
+ 	while(curr) {
+ 		KALDI_LOG<< "**Cluster " << ct;
+ 		ct++;
+ 		curr = curr->next;
+ 	}
+
  	return;
 }
 
-void ClusterCollectionConstrained::ConstrainedBottomUpClusteringIvector(IvectorInfo& ivec_info, const DiarConfig& config) {
+void ClusterCollectionConstraint::ConstraintBottomUpClusteringIvector(IvectorInfo& ivec_info, const DiarConfig& config) {
 	// Compute i-vector for each cluster
 	this->SetIvector(ivec_info);
 
@@ -168,7 +192,7 @@ void ClusterCollectionConstrained::ConstrainedBottomUpClusteringIvector(IvectorI
     // Normalize ivectors
     this->NormalizeIvectors(ivectors_average);
 
-	// Assign each cluster and idx number, to easier manipulation
+	// Assign each cluster an idx number, to easier manipulation
 	std::unordered_map<Cluster*, int32> cluster_idx_map;
 	Cluster* curr = this->head_cluster_;
 	int32 cluster_idx = 0;
