@@ -30,7 +30,7 @@ run_mfcc(){
     log_start "Extract MFCC features"
 
     mfccdir=mfcc
-    for x in $eval_data ${eval_data}_SPEECH ${eval_data}_SILENCE; do
+    for x in $eval_data ${eval_data}_SPEECH ${eval_data}_SILENCE $dev_data; do
       steps/make_mfcc.sh --cmd "$train_cmd" --nj 1 data/$x exp/make_mfcc/$x $mfccdir || exit 1;
       steps/compute_cmvn_stats.sh data/$x exp/make_mfcc/$x $mfccdir || exit 1;
     done
@@ -48,7 +48,7 @@ run_vad(){
     done
     log_end "Finish VAD"
 }
-#run_vad
+run_vad
 
 
 make_ref(){
@@ -58,23 +58,7 @@ make_ref(){
 
     log_end "Generate Reference Segments/Labels/RTTM files"
 }
-#make_ref 
-
-train_extractor(){
-    ubmdim=256
-    ivdim=32
-
-    sid/train_diag_ubm.sh --parallel-opts "" --nj 1 --apply-cmvn-utterance false --apply-cmvn-sliding false \
-    	 		--cmd "$train_cmd" data/$dev_data ${ubmdim} exp/diag_ubm_${ubmdim} || exit 1;
-
-    sid/train_full_ubm.sh --nj 1 --apply-cmvn-utterance false --apply-cmvn-sliding false \
-			--cmd "$train_cmd" data/$dev_data exp/diag_ubm_${ubmdim} exp/full_ubm_${ubmdim} || exit 1;
-
-    sid/train_ivector_extractor.sh --nj 1 --apply-cmvn-utterance false --apply-cmvn-sliding false \
-      			--cmd "$train_cmd" --num-gselect 15 --ivector-dim $ivdim --num-iters 5 exp/full_ubm_${ubmdim}/final.ubm data/$dev_data \
-      			exp/extractor_$ubmdim || exit 1;
-}
-#train_extractor
+make_ref 
 
 vad_segmentation(){
    log_start "VAD based Segmentaton"
@@ -94,7 +78,7 @@ vad_segmentation(){
        exp/vad_${eval_data}/diag_ubm_silence exp/vad_${eval_data}/full_ubm_silence 
 
    sid/compute_vad_decision_gmm.sh --nj 1 --cmd "$train_cmd" \
-       --use-energy-vad false data/$eval_data exp/vad_${eval_data}/full_ubm_silence  exp/vad_${eval_data}/full_ubm_speech \
+       --use-energy-vad false --transition-penalty 0.0001 --priors 0.999,0.001 data/$eval_data exp/vad_${eval_data}/full_ubm_silence  exp/vad_${eval_data}/full_ubm_speech \
        exp/vad_${eval_data} exp/vad_${eval_data}
 
    mkdir -p exp/vad_${eval_data}/segments; rm -f exp/vad_${eval_data}/segments/segments.scp
@@ -105,6 +89,22 @@ vad_segmentation(){
 }
 #vad_segmentation
 
+train_extractor(){
+    ubmdim=256
+    ivdim=32
+
+    sid/train_diag_ubm.sh --parallel-opts "" --nj 1 --apply-cmvn-utterance false --apply-cmvn-sliding false \
+    	 		--cmd "$train_cmd" data/$dev_data ${ubmdim} exp/diag_ubm_${ubmdim} || exit 1;
+
+    sid/train_full_ubm.sh --nj 1 --apply-cmvn-utterance false --apply-cmvn-sliding false \
+			--cmd "$train_cmd" data/$dev_data exp/diag_ubm_${ubmdim} exp/full_ubm_${ubmdim} || exit 1;
+
+    sid/train_ivector_extractor.sh --nj 1 --apply-cmvn-utterance false --apply-cmvn-sliding false \
+      			--cmd "$train_cmd" --num-gselect 15 --ivector-dim $ivdim --num-iters 5 exp/full_ubm_${ubmdim}/final.ubm data/$dev_data \
+      			exp/extractor_$ubmdim || exit 1;
+}
+train_extractor
+
 bottom_up_clustering(){
     log_start "Bottom Up Clustering With Ivector"
 
@@ -113,7 +113,7 @@ bottom_up_clustering(){
 
     log_end "Bottom Up Clustering With Ivector"
 }
-#bottom_up_clustering
+bottom_up_clustering
 
 
 compute_der(){

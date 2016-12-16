@@ -12,7 +12,7 @@ include ${KALDI_DIR}/src/kaldi.mk
 TESTFILES = 
 
 #OBJFILES = diar-utils.o segment.o
-OBJFILES = diar-utils.o segment.o ilp.o cluster.o
+OBJFILES = diar-utils.o segment.o ilp.o cluster.o cluster-constraint.o
 
 LIBNAME = kaldi-diar
 

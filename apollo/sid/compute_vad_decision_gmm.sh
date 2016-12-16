@@ -17,6 +17,8 @@ norm_vars=false
 center=true
 stage=-4
 
+transition_penalty=0.001
+
 echo "$0 $@"  # Print the command line for logging
 
 if [ -f path.sh ]; then . ./path.sh; fi
@@ -114,7 +116,7 @@ if [ $stage -le 0 ]; then
 
   echo "$0: computing VAD decisions from frame likelihoods"
   $cmd JOB=1:$nj ${log_dir}/log/make_vad_gmm_${name}.JOB.log \
-    compute-viterbi-vad-from-frame-likes --transition-penalty=0.0001 --map=${map_config} --priors=0.999,0.001 $frame_likes \
+    compute-viterbi-vad-from-frame-likes --transition-penalty=$transition_penalty --map=${map_config} --priors=$priors $frame_likes \
     ark,t,scp:${vad_dir}/vad_gmm_${name}.JOB.ark,${vad_dir}/vad_gmm_${name}.JOB.scp \
     || exit 1;
 

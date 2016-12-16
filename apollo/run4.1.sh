@@ -18,13 +18,13 @@ log_end(){
 set -e # exit on error
 
 apollo_corpus=/home/chengzhu/work/NASA/Apollo11_Diar_Corpus
-eval_data="FD" # data for diarization
+eval_data="OPS_AND_PRO" # data for diarization
 dev_data="all_apollo"  # dev_data is for UBM, TV matrix training for i-vector
 
 prep_data(){
    local/prep_apollo_data.sh $apollo_corpus
 }
-#prep_data
+prep_data
 
 run_mfcc(){
     log_start "Extract MFCC features"

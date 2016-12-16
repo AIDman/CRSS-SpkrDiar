@@ -9,6 +9,7 @@ Cluster::Cluster(Segment one_segment){
 	this->all_segments_.push_back(one_segment);
 	this->frames_ =  one_segment.Size();
 	this->frames_after_mask_ = one_segment.SizeAfterMask();
+	this->mergeable_ = true;
 }
 
 int Cluster::id_generator = 1;
@@ -39,6 +40,12 @@ void Cluster::SetLabel(const std::string& label) {
 	this->label_ = label;
 	return;
 }
+
+void Cluster::SetMergeable(bool mergeable) {
+	this->mergeable_ = mergeable;
+	return;
+}
+
 
 int32 Cluster::NumFrames() const {
 	return this->frames_;

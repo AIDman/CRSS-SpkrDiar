@@ -68,7 +68,7 @@ def plot_vad(wav_fn, vad_fn, winlen, hoplen, mode):
             wavs[uttid] = uttfile
             vad_samples = deframe(vad_files[uttid],winlen,hoplen)
             fs, s = wavfile.read(wavs[uttid])
-            N1 = 14000000
+            N1 = 5000000
             #N2 = N1 + len(vad_samples)
             N2 = N1 + 3000000
             s = s[N1:N2]

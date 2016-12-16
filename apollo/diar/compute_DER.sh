@@ -12,6 +12,7 @@
 cmd=run.pl
 
 sanity_check=false # compute DER while give all segments a single label
+column_forgive=0.25
 
 echo "$0 $@"  # Print the command line for logging
 
@@ -43,6 +44,6 @@ while read ref <&3 && read match<&4; do
 
 	name=`basename $ref .rttm`
 
-	perl local/md-eval-v21.pl -m -c 0.25 -r $ref -s $match > $result_dir/${name}.der 
+	perl local/md-eval-v21.pl -m -c $column_forgive -r $ref -s $match > $result_dir/${name}.der 
  
 done 3<$ref_dir/rttms.scp 4<$match_dir/rttms.scp

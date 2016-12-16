@@ -34,6 +34,7 @@ public:
 	std::vector<Segment> AllSegments() const;
 	std::string Label() const;
 	void SetLabel(const std::string& label);
+	void SetMergeable(bool mergeable);
 	int32 NumFrames() const;
 	int32 NumFramesAfterMask() const;
 	int32 NumSegments() const;
@@ -65,6 +66,7 @@ private:
 	int32 frames_after_mask_;
 	Vector<double> ivector_;
 	SpMatrix<double> ivector_covar_;
+	bool mergeable_;
 };
 
 
@@ -104,12 +106,11 @@ public:
 	void WriteToRttm(const std::string& rttm_outputdir);
 	Cluster* Head();
 
-private:
+public:
 	string uttid_;
 	int32 num_clusters_;
 	Cluster* head_cluster_;
 };
-
 
 
 template <typename T>

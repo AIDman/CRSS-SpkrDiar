@@ -9,6 +9,7 @@ rm -f data/all_apollo/wav.scp data/all_apollo/spk2utt data/all_apollo/utt2spk da
 for i in $subdirs;do
     channel_name=`basename $i`	
     mkdir -p data/$channel_name
+    rm -f data/$channel_name/feats.scp data/$channel_name/cmvn.scp data/$channel_name/vad.scp
     ls $i/*.wav > data/$channel_name/wav.list
     cat data/$channel_name/wav.list | awk -F'/' '{print $NF}' | sed s/.wav//g | awk '{print $1 " " $1}' > data/$channel_name/spk2utt	   	
     cat data/$channel_name/wav.list | awk -F'/' '{print $NF}' | sed s/.wav//g | awk '{print $1 " " $1}' > data/$channel_name/utt2spk
