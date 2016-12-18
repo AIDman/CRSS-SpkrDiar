@@ -18,6 +18,10 @@ int main(int argc, char *argv[]) {
         const char *usage = "Bottom Up clustering on segments based on i-vector. \n";
 
         int32 max_constraint_pair = 100;
+        bool merge_constraint = false;
+        bool do_consolidate = true;
+        int32 max_pair_per_cluster = 20;
+
         bool use_segment_label = false;
         int32 min_update_segment = 0;
         int32 target_cluster_num = 0;
@@ -25,7 +29,12 @@ int main(int argc, char *argv[]) {
         std::string ivector_dist_type = "CosineDistance";
 
         kaldi::ParseOptions po(usage);
-        po.Register("max-constraint-pair", &max_constraint_pair, "Clustering segments having frames larger than");
+        po.Register("merge-constraint", &merge_constraint, "If 'true', explored clusters are not allowed to merge to other clusters");
+        po.Register("max-constraint-pair", &max_constraint_pair, "maximal constraint pair will be used");
+        po.Register("do-consolidate", &do_consolidate, "If 'true', perform consolidate step, after explore step");
+        po.Register("max-pair-per-cluster", &max_pair_per_cluster, "maximal constraint pair will be used for each cluster, during consolidate stage");
+
+
         po.Register("min-update-segment", &min_update_segment, "Clustering segments having frames larger than");
         po.Register("target-cluster_num", &target_cluster_num, "Target cluster number as stopping criterion");
         po.Register("ivector-dist-stop", &ivector_dist_stop, "Ivector distance threshold af stopping crierion");
@@ -84,9 +93,16 @@ int main(int argc, char *argv[]) {
             // perfrom explore starge (active learning for inital cluster construction)
             segment_clusters.IvectorHacExploreFarthestFirstSearch(ivec_info, config, max_constraint_pair);
             segment_clusters.InitClustersWithExploredClusters();
-            segment_clusters.BottomUpClusteringIvector(ivec_info, config);
-            //segment_clusters.BottomUpClusteringIvector(ivec_info, config);
 
+            if(do_consolidate){
+                segment_clusters.IvectorHacConsolidate(ivec_info, config, max_pair_per_cluster);
+            }
+
+            if(merge_constraint) {
+                segment_clusters.ConstraintBottomUpClusteringIvector(ivec_info, config);
+            } else{
+                segment_clusters.BottomUpClusteringIvector(ivec_info, config);
+            }    
             
             segment_clusters.Write(segments_dirname);
             segment_clusters.WriteToRttm(rttm_outputdir);

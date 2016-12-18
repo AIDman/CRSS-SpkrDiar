@@ -46,6 +46,9 @@ void Cluster::SetMergeable(bool mergeable) {
 	return;
 }
 
+bool Cluster::IsMergeable() {
+	return this->mergeable_;
+}
 
 int32 Cluster::NumFrames() const {
 	return this->frames_;

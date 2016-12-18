@@ -187,6 +187,30 @@ void ComputeMean(const std::vector< Vector<T> >& vectorOfFeatures,
 }
 
 
+template<class T>
+void ComputeDiagCovar(const std::vector< Vector<T> >& vectorOfFeatures,
+				 Vector<T>& covar) {
+	// Compute mean vector of features. 
+	size_t N = vectorOfFeatures.size();
+	int32 dim = vectorOfFeatures[0].Dim(); // doesn't matter which vectorOfFeatures[i] we use.
+	covar.Resize(dim);
+	covar.SetZero();
+	Vector<T> mean(dim);
+	mean.SetZero();
+	for (size_t i = 0; i < N; i++) {
+		mean.AddVec(1.0/N, vectorOfFeatures[i]);
+	}
+
+	for(size_t i = 0; i < N; i++) {
+		for(size_t d = 0; d < dim; d++) {
+			covar(d) += (vectorOfFeatures[i](d) - mean(d)) * (vectorOfFeatures[i](d) - mean(d)) * (1.0/N);
+		}
+	}
+
+	return;
+}
+
+
 BaseFloat FrameIndexToSeconds(int32 frame);
 
 template<class T>

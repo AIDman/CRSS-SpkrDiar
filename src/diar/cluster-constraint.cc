@@ -10,6 +10,9 @@ ClusterCollectionConstraint::ClusterCollectionConstraint(SegmentCollection* segm
 	ClusterCollection();
 	this->segments_ = segments;
 	this->uttid_ = segments->UttID();
+	for(size_t i = 0; i < segments->Size(); i++) {
+		this->dist_mat_.push_back(std::vector<BaseFloat>(segments->Size()));
+	}
 }
 
 void ClusterCollectionConstraint::IvectorHacExploreFarthestFirstSearch(IvectorInfo& ivec_info, const DiarConfig& config, const int32& max_query) {
@@ -48,16 +51,15 @@ void ClusterCollectionConstraint::IvectorHacExploreFarthestFirstSearch(IvectorIn
     }
 
     // Compute distance matrix for segments 
-	std::vector<std::vector<BaseFloat> > dist_mat(nsegs, std::vector<BaseFloat>(nsegs, -10000.0));
 	for(size_t i = 0; i < nsegs; i++) {
-		 Segment* ith_segment = this->segments_->KthSegment(i);
-         Vector<double> i_ivector = ith_segment->Ivector();
+		Segment* ith_segment = this->segments_->KthSegment(i);
+        Vector<double> i_ivector = ith_segment->Ivector();
 		for(size_t j = i + 1; j < nsegs; j++) {
 			Segment* jth_segment = this->segments_->KthSegment(j);
          	Vector<double> j_ivector = jth_segment->Ivector();
 			
-			dist_mat[i][j] =  1 - CosineDistance(i_ivector, j_ivector);
-            dist_mat[j][i] = dist_mat[i][j];
+			this->dist_mat_[i][j] =  1 - CosineDistance(i_ivector, j_ivector);
+            this->dist_mat_[j][i] = this->dist_mat_[i][j];
 		} 
 	}
 
@@ -80,7 +82,7 @@ void ClusterCollectionConstraint::IvectorHacExploreFarthestFirstSearch(IvectorIn
                     if(i == this->explored_clusters_[c][s]){
                         continue;
                     }
-                    dist += dist_mat[i][this->explored_clusters_[c][s]];
+                    dist += this->dist_mat_[i][this->explored_clusters_[c][s]];
                 }
             }
 
@@ -96,7 +98,7 @@ void ClusterCollectionConstraint::IvectorHacExploreFarthestFirstSearch(IvectorIn
             query_count++;
             std::string cth_cluster_label = this->segments_->KthSegment(this->explored_clusters_[c][0])->Label();                
             if(farthest_seg_label == cth_cluster_label) {
-            	KALDI_LOG << "Belongs To Existing Cluster : " << farthest_seg_label << "Query Count " << query_count;
+            	KALDI_LOG << "Belongs To Existing Cluster : " << farthest_seg_label << " Query Count " << query_count;
                 this->explored_clusters_[c].push_back(farthest_seg_id);
                 match_existing_cluster = true;
                 break;
@@ -104,7 +106,7 @@ void ClusterCollectionConstraint::IvectorHacExploreFarthestFirstSearch(IvectorIn
         }
 
         if(!match_existing_cluster) {
-        	KALDI_LOG << "Belongs To New Cluster : " << farthest_seg_label  << "Query Count " << query_count;
+        	KALDI_LOG << "Belongs To New Cluster : " << farthest_seg_label  << " Query Count " << query_count;
             std::vector<int32> new_cluster;
             new_cluster.push_back(farthest_seg_id);
             this->explored_clusters_.push_back(new_cluster);
@@ -120,8 +122,30 @@ void ClusterCollectionConstraint::IvectorHacExploreFarthestFirstSearch(IvectorIn
     return;
 }
 
+
 void ClusterCollectionConstraint::IvectorHacConsolidate(IvectorInfo& ivec_info, const DiarConfig& config, const int32& max_query_per_cluster) {
-	
+	for(size_t i = 0; i < this->explored_clusters_.size();i++) {
+		std::vector<BaseFloat> dist = this->dist_mat_[this->explored_clusters_[i][0]];
+		for(size_t j = 1; j < explored_clusters_[i].size(); j++) {
+			std::vector<BaseFloat> to_add = this->dist_mat_[explored_clusters_[i][j]];
+			for(size_t k = 0; k < dist.size(); k++) {
+				dist[k] += to_add[k];
+			}
+		}
+
+		std::vector<long unsigned int> ranks = ordered(dist);
+		for(size_t k = 0; k< max_query_per_cluster; k++) {
+			if(ranks[k] != i) {
+				string rank_k_label = this->segments_->KthSegment(ranks[k])->Label();
+				string cluster_i_label = this->segments_->KthSegment(this->explored_clusters_[i][0])->Label();
+				if(rank_k_label == cluster_i_label) {
+					this->explored_clusters_[i].push_back(ranks[k]);
+					KALDI_LOG << "Total Segments For Cluster " << cluster_i_label << " is " << this->explored_clusters_[i].size();
+				}	
+			}
+		}
+	}
+	return;
 }
 
 void ClusterCollectionConstraint::InitClustersWithExploredClusters() {
@@ -169,6 +193,7 @@ void ClusterCollectionConstraint::InitClustersWithExploredClusters() {
 
  	new_cluster->next=NULL;
 
+ 	/*
  	Cluster* curr = this->head_cluster_;
  	int32 ct = 0;
  	KALDI_LOG << "Total Cluster Number: " << this->num_clusters_;
@@ -177,6 +202,7 @@ void ClusterCollectionConstraint::InitClustersWithExploredClusters() {
  		ct++;
  		curr = curr->next;
  	}
+ 	*/
 
  	return;
 }
@@ -207,7 +233,7 @@ void ClusterCollectionConstraint::ConstraintBottomUpClusteringIvector(IvectorInf
 
 	// Cluster only Segments/clusters contain larger than specified number of frame
 	Cluster* itr = this->head_cluster_;
-	int32 idx = 0, non_update_size = 0;
+	int32 idx = 0, non_update_size = this->explored_clusters_.size();
 	std::vector<BaseFloat> flt_max_vec(this->num_clusters_, 100000.0);
 	while(config.min_update_segment != 0 && itr) {
 		if(itr->NumFramesAfterMask() < config.min_update_segment) {
@@ -226,7 +252,7 @@ void ClusterCollectionConstraint::ConstraintBottomUpClusteringIvector(IvectorInf
 	while(this->num_clusters_ > non_update_size + 2) {
 
 		std::vector<Cluster*> min_dist_clusters(2);
-		BaseFloat min_dist_ivector = FindMinDistClustersIvector(config, 
+		BaseFloat min_dist_ivector = FindMinDistClustersIvectorConstraint(config, 
 																dist_matrix, 
 																to_be_updated, 
 																cluster_idx_map, 
@@ -242,13 +268,20 @@ void ClusterCollectionConstraint::ConstraintBottomUpClusteringIvector(IvectorInf
 			return;
 		}	
 
-		MergeClusters(min_dist_clusters[0], min_dist_clusters[1]);
+		Cluster* updated;
+		if(!min_dist_clusters[0]->IsMergeable()) {
+			MergeClusters(min_dist_clusters[0], min_dist_clusters[1]);
+			updated = min_dist_clusters[0];
+		} else{
+			MergeClusters(min_dist_clusters[1], min_dist_clusters[0]);
+			updated = min_dist_clusters[1];
+		}
 
 		for(size_t i=0; i<to_be_updated.size();i++) {
-			if(i == cluster_idx_map[min_dist_clusters[0]]) {
+			if(i == cluster_idx_map[updated]) {
 				to_be_updated[i] = true;
-				min_dist_clusters[0]->SetIvector(ivec_info);
-				min_dist_clusters[0]->NormalizeIvector(ivectors_average);
+				updated->SetIvector(ivec_info);
+				updated->NormalizeIvector(ivectors_average);
 			}else{
 				to_be_updated[i] = false;
 			}
@@ -259,5 +292,47 @@ void ClusterCollectionConstraint::ConstraintBottomUpClusteringIvector(IvectorInf
 	KALDI_LOG << "Cluster Number Reduced From: " << init_cluster_num << " To "<< num_clusters_;
 	return;
 }
+
+BaseFloat ClusterCollectionConstraint::FindMinDistClustersIvectorConstraint(const DiarConfig& config, 
+														std::vector<std::vector<BaseFloat>>& dist_matrix, 
+														std::vector<bool>& to_be_updated, 
+														std::unordered_map<Cluster*, int32>& cluster_idx_map, 
+														std::vector<Cluster*> &min_dist_clusters) {
+
+	KALDI_ASSERT(num_clusters_>=2);
+	Cluster* p1 = this->head_cluster_;
+	BaseFloat min_dist = FLT_MAX; 
+	BaseFloat dist;
+	while(p1){
+		int32 p1_idx = cluster_idx_map[p1];
+		Cluster* p2 = p1->next;
+		while(p2) {
+
+			int32 p2_idx = cluster_idx_map[p2];
+
+			if(!to_be_updated[p1_idx]) {
+				dist = dist_matrix[p1_idx][p2_idx]; // been updated before, avoid recalculation
+			}else{
+				if (config.ivector_dist_type == "CosineDistance") {
+					dist = 1 - CosineDistance(p1->Ivector(), p2->Ivector());
+				} else if(config.ivector_dist_type == "IvectorKL2") {
+					dist = SymetricKlDistanceDiag(p1->Ivector(), p2->Ivector(), p1->IvectorCovar(), p2->IvectorCovar());
+				}
+				dist_matrix[p1_idx][p2_idx] = dist;
+			}
+
+	    	if(dist<min_dist && (p1->IsMergeable() || p2->IsMergeable())) {
+				min_dist = dist;
+				min_dist_clusters[0] = p1;
+				min_dist_clusters[1] = p2;
+			}
+			p2 = p2->next;
+		}
+		p1 = p1->next;
+	}
+	return min_dist;
+}
+
+
 
 }

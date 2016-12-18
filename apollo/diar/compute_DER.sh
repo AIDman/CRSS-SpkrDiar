@@ -44,6 +44,6 @@ while read ref <&3 && read match<&4; do
 
 	name=`basename $ref .rttm`
 
-	perl local/md-eval-v21.pl -m -c $column_forgive -r $ref -s $match > $result_dir/${name}.der 
+	perl local/md-eval-v21.pl -z 0  -m -c $column_forgive -r $ref -s $match > $result_dir/${name}.der 
  
 done 3<$ref_dir/rttms.scp 4<$match_dir/rttms.scp

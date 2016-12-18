@@ -17,8 +17,8 @@ log_end(){
 
 set -e # exit on error
 
-apollo_corpus=/home/chengzhu/work/NASA/Apollo11_Diar_Corpus
-eval_data="FD" # data for diarization
+apollo_corpus=/home/chengzhu/work/NASA/Apollo11_Diar_Corpus_Longer_Each
+eval_data="EECOM" # data for diarization
 dev_data="all_apollo"  # dev_data is for UBM, TV matrix training for i-vector
 
 prep_data(){
@@ -80,7 +80,7 @@ bottom_up_clustering(){
     log_start "Bottom Up Clustering With Ivector"
 
     diar/segment_clustering_ivector_constraint.sh --nj 1 --apply-cmvn-utterance false --apply-cmvn-sliding false \
-       --max-constraint-pair 100 --ivector-dist-stop 0.7 exp/ref/$eval_data/segments exp/extractor_256 data/$eval_data exp/clustering_ivector_constraint/$eval_data
+       --max-constraint-pair 500 --merge-constraint true --do-consolidate true --max-pair-per-cluster 100 --ivector-dist-stop 5.7 exp/ref/$eval_data/segments exp/extractor_256 data/$eval_data exp/clustering_ivector_constraint/$eval_data
 
     log_end "Bottom Up Clustering With Ivector"
 }

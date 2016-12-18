@@ -22,7 +22,11 @@ ivector_dist_stop=0.7
 target_cluster_num=2
 min_update_segment=0
 use_segment_label=false
+
 max_constraint_pair=200
+merge_constraint=false
+do_consolidate=true
+max_pair_per_cluster=20
 # End configuration section.
 
 echo "$0 $@"  # Print the command line for logging
@@ -91,8 +95,11 @@ if [ $stage -le 0 ]; then
 	ark,s,cs:- ark:- \| scale-post ark:- $posterior_scale ark,t:$dir/posterior.JOB || exit 1;
 
   $cmd JOB=1:$nj $dir/log/segment_clustering_ivector.JOB.log \
-    segment-clustering-ivector-constraint --max-constraint-pair=$max_constraint_pair --use-segment-label=$use_segment_label --min-update-segment=$min_update_segment --target-cluster-num=$target_cluster_num --ivector-dist-stop=$ivector_dist_stop $segdir/segments.scp "$feats" ark,s,cs:$dir/posterior.JOB $extractor_dir/final.ie \
-	$dir/segments $dir/rttms|| exit 1;
+    segment-clustering-ivector-constraint --max-constraint-pair=$max_constraint_pair --merge-constraint=$merge_constraint \
+					--do-consolidate=$do_consolidate --max-pair-per-cluster=$max_pair_per_cluster \
+					--use-segment-label=$use_segment_label --min-update-segment=$min_update_segment \
+					--target-cluster-num=$target_cluster_num --ivector-dist-stop=$ivector_dist_stop $segdir/segments.scp "$feats" ark,s,cs:$dir/posterior.JOB $extractor_dir/final.ie \
+					$dir/segments $dir/rttms|| exit 1;
 
 fi
 

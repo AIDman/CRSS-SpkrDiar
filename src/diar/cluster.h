@@ -35,6 +35,7 @@ public:
 	std::string Label() const;
 	void SetLabel(const std::string& label);
 	void SetMergeable(bool mergeable);
+	bool IsMergeable();
 	int32 NumFrames() const;
 	int32 NumFramesAfterMask() const;
 	int32 NumSegments() const;
