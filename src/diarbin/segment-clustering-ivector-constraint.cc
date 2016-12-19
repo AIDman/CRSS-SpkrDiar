@@ -80,6 +80,8 @@ int main(int argc, char *argv[]) {
 
             // the last segment, might exceeds total featuures lengh
             speech_segments.FixNonValidSegments(feats.NumCols());
+
+            KALDI_LOG << "Input Number of Segments " << speech_segments.Size();
  
             // read posterior
             Posterior posteriors = posterior_reader.Value(utt_segments.UttID());
@@ -103,7 +105,7 @@ int main(int argc, char *argv[]) {
             } else{
                 segment_clusters.BottomUpClusteringIvector(ivec_info, config);
             }    
-            
+          
             segment_clusters.Write(segments_dirname);
             segment_clusters.WriteToRttm(rttm_outputdir);
         }

@@ -24,7 +24,7 @@ dev_data="all_apollo"  # dev_data is for UBM, TV matrix training for i-vector
 prep_data(){
    local/prep_apollo_data.sh $apollo_corpus
 }
-prep_data
+#prep_data
 
 run_mfcc(){
     log_start "Extract MFCC features"
@@ -37,7 +37,7 @@ run_mfcc(){
 
     log_end "Extract MFCC features"
 }
-run_mfcc 
+#run_mfcc 
 
 
 run_vad(){
@@ -58,7 +58,7 @@ make_ref(){
 
     log_end "Generate Reference Segments/Labels/RTTM files"
 }
-make_ref 
+#make_ref 
 
 train_extractor(){
     ubmdim=256

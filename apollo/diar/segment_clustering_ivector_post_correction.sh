@@ -25,6 +25,8 @@ use_segment_label=false
 
 max_check_pair=200
 nbest=5
+cluster_samples=20
+mode="prob"
 # End configuration section.
 
 echo "$0 $@"  # Print the command line for logging
@@ -33,7 +35,7 @@ if [ -f path.sh ]; then . ./path.sh; fi
 . parse_options.sh || exit 1;
 
 
-if [ $# != 4 ]; then
+if [ $# != 5 ]; then
   echo "Usage: $0 <extractor-dir> <data> <ivector-dir>"
   echo " e.g.: $0 exp/extractor_2048_male data/train_male exp/ivectors_male"
   echo "main options (for others, see top of script file)"
@@ -50,9 +52,10 @@ if [ $# != 4 ]; then
 fi
 
 segdir=$1
-extractor_dir=$2
-data=$3
-dir=$4
+ref_segdir=$2
+extractor_dir=$3
+data=$4
+dir=$5
 
 
 for f in $extractor_dir/final.ie $extractor_dir/final.ubm $data/feats.scp ; do
@@ -82,6 +85,10 @@ if ! $apply_cmvn_sliding  && ! $apply_cmvn_utterance ; then
    feats="ark,s,cs:add-deltas $delta_opts scp:$data/feats.scp ark:- |"	
 fi
 
+while read sfile
+do
+    sort -k2 -n $sfile -o $sfile	
+done < $segdir/segments.scp
 
 if [ $stage -le 0 ]; then
   echo "$0: extracting iVectors"
@@ -93,8 +100,8 @@ if [ $stage -le 0 ]; then
 	ark,s,cs:- ark:- \| scale-post ark:- $posterior_scale ark,t:$dir/posterior.JOB || exit 1;
 
   $cmd JOB=1:$nj $dir/log/segment_clustering_ivector.JOB.log \
-    segment-clustering-post-correction --max-check-pair=$max_check_pair --nbest=$nbest \
-					       $segdir/segments.scp "$feats" ark,s,cs:$dir/posterior.JOB $extractor_dir/final.ie \
+    segment-clustering-post-correction-ivector --mode=$mode --max-check-pair=$max_check_pair --nbest=$nbest --cluster-samples=$cluster_samples \
+					       $segdir/segments.scp $ref_segdir/segments.scp "$feats" ark,s,cs:$dir/posterior.JOB $extractor_dir/final.ie \
 					       $dir/segments $dir/rttms|| exit 1;
 
 fi

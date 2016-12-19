@@ -17,7 +17,7 @@ log_end(){
 set -e # exit on error
 
 apollo_corpus=/home/chengzhu/work/NASA/Apollo11_Diar_Corpus
-eval_data="FD" # data for diarization
+eval_data="test1" # data for diarization
 
 prep_data(){
    local/prep_apollo_data.sh $apollo_corpus

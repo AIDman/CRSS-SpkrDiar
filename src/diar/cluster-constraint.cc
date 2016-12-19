@@ -64,18 +64,20 @@ void ClusterCollectionConstraint::IvectorHacExploreFarthestFirstSearch(IvectorIn
 	}
 
     // Exploring Stage: 
-    
     srand(time(NULL));
     int32 seed_seg_id = rand() % nsegs;
     std::vector<int32> seed_cluster;
     seed_cluster.push_back(seed_seg_id);
     this->explored_clusters_.push_back(seed_cluster);
+    std::unordered_map<int32,int32> clustered_seg;
+    clustered_seg[seed_seg_id] = 1;
 
     int32 query_count=0, farthest_seg_id=0;
     while(query_count <= max_query) {
     	std::string farthest_seg_label;
         BaseFloat farthest_dist = -10000.0;
         for(size_t i = 0; i < nsegs; i++) {
+        	if(clustered_seg.find(i) != clustered_seg.end()) continue;
             BaseFloat dist = 0.0;
             for(size_t c = 0; c < this->explored_clusters_.size(); c++) {
                 for(size_t s = 0; s < this->explored_clusters_[c].size(); s++) {
@@ -93,6 +95,8 @@ void ClusterCollectionConstraint::IvectorHacExploreFarthestFirstSearch(IvectorIn
             farthest_seg_label = this->segments_->KthSegment(farthest_seg_id)->Label();
         }
 
+
+
         bool match_existing_cluster = false;
         for(size_t c = 0; c < this->explored_clusters_.size(); c++) {
             query_count++;
@@ -100,6 +104,7 @@ void ClusterCollectionConstraint::IvectorHacExploreFarthestFirstSearch(IvectorIn
             if(farthest_seg_label == cth_cluster_label) {
             	KALDI_LOG << "Belongs To Existing Cluster : " << farthest_seg_label << " Query Count " << query_count;
                 this->explored_clusters_[c].push_back(farthest_seg_id);
+    			clustered_seg[farthest_seg_id] = 1;
                 match_existing_cluster = true;
                 break;
             }
@@ -110,6 +115,7 @@ void ClusterCollectionConstraint::IvectorHacExploreFarthestFirstSearch(IvectorIn
             std::vector<int32> new_cluster;
             new_cluster.push_back(farthest_seg_id);
             this->explored_clusters_.push_back(new_cluster);
+    		clustered_seg[farthest_seg_id] = 1;
         }        
     }
 

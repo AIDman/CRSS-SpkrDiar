@@ -49,6 +49,18 @@ std::vector<size_t> ordered(std::vector<T> const& values) {
     return indices;
 }
 
+template <typename T>
+std::vector<size_t> ordered_descend(std::vector<T> const& values) {
+    std::vector<size_t> indices(values.size());
+    std::iota(begin(indices), end(indices), static_cast<size_t>(0));
+
+    std::sort(
+        begin(indices), end(indices),
+        [&](size_t a, size_t b) { return values[a] > values[b]; }
+    );
+    return indices;
+}
+
 }
 
 #endif

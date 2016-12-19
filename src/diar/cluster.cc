@@ -718,6 +718,7 @@ void ClusterCollection::Write(const std::string& segments_dirname) {
 	fout.open(segments_wxfilename.c_str());
 	fscp.open(segments_scpfilename.c_str(), std::ios::app);
 	Cluster* curr = this->head_cluster_;
+	int32 segment_count = 0;
 	while(curr){
 		string clst_label = curr->Label();
 		for (size_t i =0; i < curr->NumSegments(); i++){
@@ -728,10 +729,12 @@ void ClusterCollection::Write(const std::string& segments_dirname) {
 			fout << seg_start << " ";
 			fout << seg_end << " ";
 			fout << clst_label << "\n";
+			segment_count++;
 		}
 		curr=curr->next;
 	}
 
+	KALDI_LOG << "Number of Segments Write Out " << segment_count;
 	fscp << segments_wxfilename << "\n";
 	fscp.close();
 	fout.close();

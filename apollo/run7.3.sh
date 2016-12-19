@@ -18,7 +18,7 @@ log_end(){
 set -e # exit on error
 
 apollo_corpus=/home/chengzhu/work/NASA/Apollo11_Diar_Corpus
-eval_data="test1" # data for diarization
+eval_data="FD" # data for diarization
 dev_data="all_apollo"  # dev_data is for UBM, TV matrix training for i-vector
 
 prep_data(){
@@ -80,7 +80,7 @@ bottom_up_clustering(){
     log_start "Bottom Up Clustering With Ivector"
 
     diar/segment_clustering_ivector_constraint.sh --nj 1 --apply-cmvn-utterance false --apply-cmvn-sliding false \
-       --max-constraint-pair 50 --merge-constraint true --do-consolidate true --max-pair-per-cluster 10 --ivector-dist-stop 5.7 exp/ref/$eval_data/segments exp/extractor_256 data/$eval_data exp/clustering_ivector_constraint/$eval_data
+       --max-constraint-pair 50 --merge-constraint true --do-consolidate true --max-pair-per-cluster 20 --ivector-dist-stop 5.7 exp/ref/$eval_data/segments exp/extractor_256 data/$eval_data exp/clustering_ivector_constraint/$eval_data
 
     log_end "Bottom Up Clustering With Ivector"
 }
@@ -90,7 +90,7 @@ post_correction(){
     log_start "Post Correction"
 
     diar/segment_clustering_ivector_post_correction.sh --nj 1 --apply-cmvn-utterance false --apply-cmvn-sliding false \
-	--max-check-pair 200 --nbest 5 exp/clustering_ivector_constraint/$eval_data/segments exp/extractor_256 data/$eval_data exp/clustering_ivector_post_correction/$eval_data	
+	--mode "nrandom" --max-check-pair 20 --nbest 3 --cluster-samples 20 exp/clustering_ivector_constraint/$eval_data/segments exp/ref/$eval_data/segments exp/extractor_256 data/$eval_data exp/clustering_ivector_post_correction/$eval_data	
 
     log_end "Post Correction"	
 }
@@ -98,7 +98,7 @@ post_correction
 
 compute_der(){
 	
-    diar/compute_DER.sh --sanity_check false data/$eval_data exp/clustering_ivector_constraint/$eval_data/rttms exp/result_DER/$eval_data	
+    diar/compute_DER.sh --sanity_check false data/$eval_data exp/clustering_ivector_post_correction/$eval_data/rttms exp/result_DER/$eval_data	
     grep OVERALL exp/result_DER/$eval_data/*.der && grep OVERALL exp/result_DER/$eval_data/*.der | awk '{ sum += $7; n++ } END { if (n > 0) print "Avergage: " sum / n; }'
 }
 compute_der
