@@ -21,6 +21,7 @@ public:
 	ClusterCollectionConstraint(SegmentCollection* segments);
 
 	void IvectorHacExploreFarthestFirstSearch(IvectorInfo& ivec_info, const DiarConfig& config, const int32& max_query);
+	void IvectorHacExploreFarthestFirstSearch(IvectorInfo& ivec_info, const DiarConfig& config, const int32& max_query, const std::vector<bool>& is_seed_candidate);
 	void IvectorHacConsolidate(IvectorInfo& ivec_info, const DiarConfig& config, const int32& max_query_per_cluster);
 	void InitClustersWithExploredClusters();
 	void ConstraintBottomUpClusteringIvector(IvectorInfo& ivec_info, const DiarConfig& config);

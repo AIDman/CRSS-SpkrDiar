@@ -40,16 +40,18 @@ int main(int argc, char *argv[]) {
         using namespace kaldi;
 
         const char *usage = "To to later. \n";
-        int32 max_check_pair = 100;
+        BaseFloat max_check_pair_percentage = 0.2;
         int32 cluster_samples = 20;
         int32 nbest = 5;
         std::string mode = "prob";
+        std::string prob_type = "Gaussian";
 
         kaldi::ParseOptions po(usage);
-        po.Register("max-check-pair", &max_check_pair, "maximal pair will be checked for correction");
+        po.Register("max-check-pair-percentage", &max_check_pair_percentage, "maximal pair percentage will be checked for correction");
         po.Register("nbest", &nbest, "maximal check pair for each segment");
         po.Register("cluster-samples", &cluster_samples, "the number of samples to compare with in a cluster for majority voting");
         po.Register("mode", &mode, "rank by randome or probability");
+        po.Register("prob_type", &prob_type, "probability type");
         po.Read(argc, argv);
 
         if (po.NumArgs() != 7) {
@@ -97,6 +99,9 @@ int main(int argc, char *argv[]) {
  
             KALDI_ASSERT(speech_segments.Size() == ref_segments.Size());
 
+            int32 max_check_pair = speech_segments.Size() * max_check_pair_percentage;
+
+            KALDI_LOG << "Max Check Pair: " << max_check_pair;
             // Read posterior
             Posterior posteriors = posterior_reader.Value(utt_segments.UttID());
 
@@ -172,8 +177,15 @@ int main(int argc, char *argv[]) {
                 Vector<double> kth_ivector = kth_segment->Ivector();
                 for(size_t c = 0; c < num_clst; c++) {
                     std::string cluster_label = cluster_list[c];
-                    segments_post_probs[k][c] = IvectorGaussPostProb(cluster2mean[cluster_label], cluster2covar[cluster_label], kth_ivector);
-                    segments_post_probs_r[c][k] = segments_post_probs[k][c];
+                    if(prob_type == "Gaussian") {
+                        segments_post_probs[k][c] = IvectorGaussPostProb(cluster2mean[cluster_label], cluster2covar[cluster_label], kth_ivector);
+                        segments_post_probs_r[c][k] = segments_post_probs[k][c];
+                    } else if (prob_type == "CDS") {
+                        segments_post_probs[k][c] = CosineDistance(kth_segment->Ivector(), cluster2mean[cluster_label]);
+                        segments_post_probs_r[c][k] = segments_post_probs[k][c];
+                    } else {
+                        KALDI_ERR << "Non existing prob_type!!";
+                    }
                 }
             }
             
@@ -184,7 +196,6 @@ int main(int argc, char *argv[]) {
                 std::string ith_label = ith_segment->Label();                
                 BaseFloat prob_correct = 0.0;
                 BaseFloat prob_incorrect = 0.0;
-                BaseFloat prob_sum = 0.0;
                 for(size_t j = 0; j < num_clst; j++) {
                     if(ith_label == cluster_list[j]) {
                         prob_correct += exp(segments_post_probs[i][j]);
@@ -224,7 +235,7 @@ int main(int argc, char *argv[]) {
                 KALDI_LOG << "Expeced DIFF: " << expected_spk_err_diff[sid] << " Assigned Label: " << speech_segments.KthSegment(sid)->Label();
                 std::string sid_label = ref_segments.KthSegment(sid)->Label();
                 std::vector<long unsigned int> ranked_cluster_candidate = ordered_descend(segments_post_probs[sid]);
-                for(size_t j = 0; j < nbest; j++) {
+                for(size_t j = 0; j < (nbest < num_clst ? nbest : num_clst); j++) {
                     int32 cid = ranked_cluster_candidate[j];
                     int32 mvc = 0;
                     int32 tot = cluster2segid[cluster_list[cid]].size();

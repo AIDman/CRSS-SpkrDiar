@@ -129,7 +129,144 @@ void ClusterCollectionConstraint::IvectorHacExploreFarthestFirstSearch(IvectorIn
 }
 
 
+void ClusterCollectionConstraint::IvectorHacExploreFarthestFirstSearch(IvectorInfo& ivec_info, const DiarConfig& config, 
+																		const int32& max_query, const std::vector<bool>& is_seed_candidate) {
+	
+	int32 nsegs = segments_->Size();
+
+	// Compute and assign i-vectors for each segments
+	std::vector< Vector<double> > ivector_collect;
+    for (size_t k = 0; k < nsegs; k++) {
+	    Segment* kth_segment = this->segments_->KthSegment(k);
+    	kth_segment->SetIvector(*ivec_info.feats, 
+                            *ivec_info.posteriors, 
+                            *ivec_info.extractor);
+
+    	ivector_collect.push_back(kth_segment->Ivector());
+    }
+
+    // compute mean of ivectors
+    Vector<double> total_mean;
+    ComputeMean(ivector_collect, total_mean);
+
+    // Apply mean & length normalization to i-vector of segments
+    for (size_t k = 0; k<nsegs; k++) {
+        // mean normalization
+        Segment* kth_segment = this->segments_->KthSegment(k);
+        Vector<double> kth_ivector = kth_segment->Ivector();
+        SpMatrix<double> kth_ivector_covar = kth_segment->IvectorCovar();
+        kth_ivector.AddVec(-1, total_mean);
+
+        // length normalization
+        BaseFloat norm = kth_ivector.Norm(2.0);
+        BaseFloat ratio = norm / sqrt(kth_ivector.Dim()); // how much larger it is
+        kth_ivector.Scale(1.0 / ratio);
+        kth_ivector_covar.Scale(1.0 / ratio);
+
+        kth_segment->SetIvector(kth_ivector);
+    }
+
+    // Compute distance matrix for segments 
+	for(size_t i = 0; i < nsegs; i++) {
+		Segment* ith_segment = this->segments_->KthSegment(i);
+        Vector<double> i_ivector = ith_segment->Ivector();
+		for(size_t j = i + 1; j < nsegs; j++) {
+			Segment* jth_segment = this->segments_->KthSegment(j);
+         	Vector<double> j_ivector = jth_segment->Ivector();
+			
+			this->dist_mat_[i][j] =  1 - CosineDistance(i_ivector, j_ivector);
+            this->dist_mat_[j][i] = this->dist_mat_[i][j];
+		} 
+	}
+
+    // Exploring Stage: 
+    std::unordered_map<int32,int32> clustered_seg;
+    int32 query_count=0, farthest_seg_id=0;
+    for(int32 i = 0; i < nsegs; i++) {
+    	if(is_seed_candidate[i]) {
+    		std::string ith_label = this->segments_->KthSegment(i)->Label();
+	        bool match_existing_cluster = false;
+	        for(size_t c = 0; c < this->explored_clusters_.size(); c++) {
+	            query_count++;
+	            std::string cth_cluster_label = this->segments_->KthSegment(this->explored_clusters_[c][0])->Label();                
+	            if(ith_label == cth_cluster_label) {
+	                this->explored_clusters_[c].push_back(i);
+	    			clustered_seg[i] = 1;
+	                match_existing_cluster = true;
+	                break;
+	            }
+	        }
+
+	        if(!match_existing_cluster) {
+	            std::vector<int32> new_cluster;
+	            new_cluster.push_back(i);
+	            this->explored_clusters_.push_back(new_cluster);
+	    		clustered_seg[i] = 1;
+	        }            		
+    	}
+    }
+
+    while(query_count <= max_query) {
+    	std::string farthest_seg_label;
+        BaseFloat farthest_dist = -10000.0;
+        for(size_t i = 0; i < nsegs; i++) {
+        	if(clustered_seg.find(i) != clustered_seg.end()) continue;
+            BaseFloat dist = 0.0;
+            for(size_t c = 0; c < this->explored_clusters_.size(); c++) {
+                for(size_t s = 0; s < this->explored_clusters_[c].size(); s++) {
+                    if(i == this->explored_clusters_[c][s]){
+                        continue;
+                    }
+                    dist += this->dist_mat_[i][this->explored_clusters_[c][s]];
+                }
+            }
+
+            if(dist > farthest_dist) {
+                farthest_dist = dist;
+                farthest_seg_id = i;
+            }
+            farthest_seg_label = this->segments_->KthSegment(farthest_seg_id)->Label();
+        }
+
+        bool match_existing_cluster = false;
+        for(size_t c = 0; c < this->explored_clusters_.size(); c++) {
+            query_count++;
+            std::string cth_cluster_label = this->segments_->KthSegment(this->explored_clusters_[c][0])->Label();                
+            if(farthest_seg_label == cth_cluster_label) {
+            	KALDI_LOG << "Belongs To Existing Cluster : " << farthest_seg_label << " Query Count " << query_count;
+                this->explored_clusters_[c].push_back(farthest_seg_id);
+    			clustered_seg[farthest_seg_id] = 1;
+                match_existing_cluster = true;
+                break;
+            }
+        }
+
+        if(!match_existing_cluster) {
+        	KALDI_LOG << "Belongs To New Cluster : " << farthest_seg_label  << " Query Count " << query_count;
+            std::vector<int32> new_cluster;
+            new_cluster.push_back(farthest_seg_id);
+            this->explored_clusters_.push_back(new_cluster);
+    		clustered_seg[farthest_seg_id] = 1;
+        }        
+    }
+
+    KALDI_LOG << "Finished Farthest First Search Exploring.";
+    KALDI_LOG << "A Total of " << this->explored_clusters_.size() << " clusters are explored:";
+    for(int k = 0; k < this->explored_clusters_.size(); k++) {
+    	KALDI_LOG << "Cluster" << k << "found " << this->explored_clusters_[k].size() << " segments";
+    }
+
+    return;
+}
+
 void ClusterCollectionConstraint::IvectorHacConsolidate(IvectorInfo& ivec_info, const DiarConfig& config, const int32& max_query_per_cluster) {
+	std::unordered_map<int32, int32> clustered_segments;
+	for(size_t i = 0; i < this->explored_clusters_.size();i++) {
+		for(size_t j = 1; j < explored_clusters_[i].size(); j++) {
+			clustered_segments[explored_clusters_[i][j]] = 1;
+		}
+	}
+
 	for(size_t i = 0; i < this->explored_clusters_.size();i++) {
 		std::vector<BaseFloat> dist = this->dist_mat_[this->explored_clusters_[i][0]];
 		for(size_t j = 1; j < explored_clusters_[i].size(); j++) {
@@ -141,11 +278,12 @@ void ClusterCollectionConstraint::IvectorHacConsolidate(IvectorInfo& ivec_info, 
 
 		std::vector<long unsigned int> ranks = ordered(dist);
 		for(size_t k = 0; k< max_query_per_cluster; k++) {
-			if(ranks[k] != i) {
+			if(ranks[k] != i && clustered_segments.find(ranks[k]) == clustered_segments.end()) {
 				string rank_k_label = this->segments_->KthSegment(ranks[k])->Label();
 				string cluster_i_label = this->segments_->KthSegment(this->explored_clusters_[i][0])->Label();
 				if(rank_k_label == cluster_i_label) {
 					this->explored_clusters_[i].push_back(ranks[k]);
+					clustered_segments[ranks[k]] = 1;
 					KALDI_LOG << "Total Segments For Cluster " << cluster_i_label << " is " << this->explored_clusters_[i].size();
 				}	
 			}
@@ -153,6 +291,7 @@ void ClusterCollectionConstraint::IvectorHacConsolidate(IvectorInfo& ivec_info, 
 	}
 	return;
 }
+
 
 void ClusterCollectionConstraint::InitClustersWithExploredClusters() {
  	KALDI_ASSERT(explored_clusters_.size() > 0);
@@ -163,6 +302,8 @@ void ClusterCollectionConstraint::InitClustersWithExploredClusters() {
  	for(size_t i = 0; i < this->explored_clusters_.size(); i++) {
  		for(size_t j = 0; j < this->explored_clusters_[i].size(); j++) {
  			int32 segment_idx = this->explored_clusters_[i][j];
+ 			if(clustered_segments.find(segment_idx) != clustered_segments.end()) 
+ 					continue;
  			clustered_segments[segment_idx] = 1;
  			if(i == 0 && j == 0) {
  				Cluster* head_cluster = new Cluster(*(this->segments_->KthSegment(segment_idx)));

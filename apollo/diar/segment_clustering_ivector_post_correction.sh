@@ -23,10 +23,11 @@ target_cluster_num=2
 min_update_segment=0
 use_segment_label=false
 
-max_check_pair=200
+max_check_pair_percentage=0.2
 nbest=5
 cluster_samples=20
 mode="prob"
+prob_type="Gaussian"
 # End configuration section.
 
 echo "$0 $@"  # Print the command line for logging
@@ -100,7 +101,7 @@ if [ $stage -le 0 ]; then
 	ark,s,cs:- ark:- \| scale-post ark:- $posterior_scale ark,t:$dir/posterior.JOB || exit 1;
 
   $cmd JOB=1:$nj $dir/log/segment_clustering_ivector.JOB.log \
-    segment-clustering-post-correction-ivector --mode=$mode --max-check-pair=$max_check_pair --nbest=$nbest --cluster-samples=$cluster_samples \
+    segment-clustering-post-correction-ivector --mode=$mode --prob-type=$prob_type --max-check-pair-percentage=$max_check_pair_percentage --nbest=$nbest --cluster-samples=$cluster_samples \
 					       $segdir/segments.scp $ref_segdir/segments.scp "$feats" ark,s,cs:$dir/posterior.JOB $extractor_dir/final.ie \
 					       $dir/segments $dir/rttms|| exit 1;
 
