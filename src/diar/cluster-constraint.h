@@ -20,6 +20,7 @@ public:
 	ClusterCollectionConstraint();
 	ClusterCollectionConstraint(SegmentCollection* segments);
 
+	void IvectorHacExploreRandom(IvectorInfo& ivec_info, const DiarConfig& config, const int32& max_query);
 	void IvectorHacExploreFarthestFirstSearch(IvectorInfo& ivec_info, const DiarConfig& config, const int32& max_query);
 	void IvectorHacExploreFarthestFirstSearch(IvectorInfo& ivec_info, const DiarConfig& config, const int32& max_query, const std::vector<bool>& is_seed_candidate);
 	void IvectorHacConsolidate(IvectorInfo& ivec_info, const DiarConfig& config, const int32& max_query_per_cluster);
@@ -32,7 +33,7 @@ public:
 													std::vector<Cluster*> &min_dist_clusters);
 	
 
-private:
+public:
 	SegmentCollection* segments_;
 	std::vector<std::vector<int32> > explored_clusters_;
 	std::vector<std::vector<BaseFloat>> dist_mat_;

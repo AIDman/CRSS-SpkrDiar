@@ -18,7 +18,7 @@ log_end(){
 set -e # exit on error
 
 apollo_corpus=/home/chengzhu/work/NASA/Apollo11_Diar_Corpus
-eval_data="GNC" # data for diarization
+eval_data="FD" # data for diarization
 dev_data="all_apollo"  # dev_data is for UBM, TV matrix training for i-vector
 
 prep_data(){

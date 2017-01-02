@@ -15,6 +15,102 @@ ClusterCollectionConstraint::ClusterCollectionConstraint(SegmentCollection* segm
 	}
 }
 
+void ClusterCollectionConstraint::IvectorHacExploreRandom(IvectorInfo& ivec_info, const DiarConfig& config, const int32& max_query) {
+	int32 nsegs = segments_->Size();
+
+	// Compute and assign i-vectors for each segments
+	std::vector< Vector<double> > ivector_collect;
+    for (size_t k = 0; k < nsegs; k++) {
+	    Segment* kth_segment = this->segments_->KthSegment(k);
+    	kth_segment->SetIvector(*ivec_info.feats, 
+                            *ivec_info.posteriors, 
+                            *ivec_info.extractor);
+
+    	ivector_collect.push_back(kth_segment->Ivector());
+    }
+
+    // compute mean of ivectors
+    Vector<double> total_mean;
+    ComputeMean(ivector_collect, total_mean);
+
+    // Apply mean & length normalization to i-vector of segments
+    for (size_t k = 0; k<nsegs; k++) {
+        // mean normalization
+        Segment* kth_segment = this->segments_->KthSegment(k);
+        Vector<double> kth_ivector = kth_segment->Ivector();
+        SpMatrix<double> kth_ivector_covar = kth_segment->IvectorCovar();
+        kth_ivector.AddVec(-1, total_mean);
+
+        // length normalization
+        BaseFloat norm = kth_ivector.Norm(2.0);
+        BaseFloat ratio = norm / sqrt(kth_ivector.Dim()); // how much larger it is
+        kth_ivector.Scale(1.0 / ratio);
+        kth_ivector_covar.Scale(1.0 / ratio);
+
+        kth_segment->SetIvector(kth_ivector);
+    }
+
+    // Compute distance matrix for segments 
+	for(size_t i = 0; i < nsegs; i++) {
+		Segment* ith_segment = this->segments_->KthSegment(i);
+        Vector<double> i_ivector = ith_segment->Ivector();
+		for(size_t j = i + 1; j < nsegs; j++) {
+			Segment* jth_segment = this->segments_->KthSegment(j);
+         	Vector<double> j_ivector = jth_segment->Ivector();
+			
+			this->dist_mat_[i][j] =  1 - CosineDistance(i_ivector, j_ivector);
+            this->dist_mat_[j][i] = this->dist_mat_[i][j];
+		} 
+	}
+
+    // generate random numbers for exploring: 
+    srand((unsigned)time(NULL));
+    std::vector<int32> rand_sid(max_query);
+    int32 seed_seg_id;
+    for(int32 i = 0; i < max_query; i++) {
+        seed_seg_id = rand() % (this->segments_->Size() - 1);
+        rand_sid[i] = seed_seg_id;
+    }
+
+    std::unordered_map<int32,int32> clustered_seg;
+    int32 query_count=0;
+    for(int32 i = 0; i < max_query; i++) {
+    	if(query_count >= max_query) break;
+        int32 seg_id = rand_sid[i];
+        std::string seg_label = this->segments_->KthSegment(seg_id)->Label();
+
+        bool match_existing_cluster = false;
+        for(size_t c = 0; c < this->explored_clusters_.size(); c++) {
+            query_count++;
+            std::string cth_cluster_label = this->segments_->KthSegment(this->explored_clusters_[c][0])->Label();                
+            if(seg_label == cth_cluster_label) {
+            	KALDI_LOG << "Belongs To Existing Cluster : " << seg_label << " Query Count " << query_count;
+                this->explored_clusters_[c].push_back(seg_id);
+    			clustered_seg[seg_id] = 1;
+                match_existing_cluster = true;
+                break;
+            }
+        }
+
+        if(!match_existing_cluster) {
+        	KALDI_LOG << "Belongs To New Cluster : " << seg_label  << " Query Count " << query_count;
+            std::vector<int32> new_cluster;
+            new_cluster.push_back(seg_id);
+            this->explored_clusters_.push_back(new_cluster);
+    		clustered_seg[seg_id] = 1;
+        }        
+    }
+
+    KALDI_LOG << "Finished Farthest First Search Exploring.";
+    KALDI_LOG << "A Total of " << this->explored_clusters_.size() << " clusters are explored:";
+    for(int k = 0; k < this->explored_clusters_.size(); k++) {
+    	KALDI_LOG << "Cluster" << k << "found " << this->explored_clusters_[k].size() << " segments";
+    }
+
+    return;
+}
+
+
 void ClusterCollectionConstraint::IvectorHacExploreFarthestFirstSearch(IvectorInfo& ivec_info, const DiarConfig& config, const int32& max_query) {
 	int32 nsegs = segments_->Size();
 

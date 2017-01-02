@@ -32,7 +32,7 @@ run_mfcc(){
 
     log_end "Extract MFCC features"
 }
-run_mfcc 
+#run_mfcc 
 
 
 run_vad(){
@@ -43,7 +43,7 @@ run_vad(){
     done
     log_end "Finish VAD"
 }
-run_vad
+#run_vad
 
 
 make_ref(){
@@ -53,7 +53,7 @@ make_ref(){
 
     log_end "Generate Reference Segments/Labels/RTTM files"
 }
-make_ref 
+#make_ref 
 
 train_extractor(){
     ubmdim=256
@@ -69,12 +69,12 @@ train_extractor(){
       --ivector-dim $ivdim --num-iters 5 exp/full_ubm_${ubmdim}/final.ubm data/$dev \
       exp/extractor_$ubmdim || exit 1;
 }
-train_extractor
+#train_extractor
 
 bottom_up_clustering(){
     log_start "Bottom Up Clustering With Ivector"
 
-    diar/segment_clustering_ivector.sh --nj 1 --use-segment-label false --ivector-dist-stop 0.7 exp/ref/$eval/segments exp/extractor_256 data/$eval exp/clustering_ivector/$eval	
+    diar/segment_clustering_ivector.sh --nj 1 --use-segment-label false --ivector-dist-stop 0.9 exp/ref/$eval/segments exp/extractor_256 data/$eval exp/clustering_ivector/$eval	
     
     log_end "Bottom Up Clustering With Ivector"
 }

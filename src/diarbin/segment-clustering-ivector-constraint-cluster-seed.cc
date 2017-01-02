@@ -17,10 +17,10 @@ int main(int argc, char *argv[]) {
 
         const char *usage = "Bottom Up clustering on segments based on i-vector. \n";
 
-        int32 max_constraint_pair = 100;
         bool merge_constraint = false;
         bool do_consolidate = true;
-        int32 max_pair_per_cluster = 20;
+        BaseFloat max_explore_pair_percentage = 0.3;
+        BaseFloat max_consolidate_pair_percentage = 0.3;
 
         bool use_segment_label = false;
         int32 min_update_segment = 0;
@@ -30,10 +30,9 @@ int main(int argc, char *argv[]) {
 
         kaldi::ParseOptions po(usage);
         po.Register("merge-constraint", &merge_constraint, "If 'true', explored clusters are not allowed to merge to other clusters");
-        po.Register("max-constraint-pair", &max_constraint_pair, "maximal constraint pair will be used");
         po.Register("do-consolidate", &do_consolidate, "If 'true', perform consolidate step, after explore step");
-        po.Register("max-pair-per-cluster", &max_pair_per_cluster, "maximal constraint pair will be used for each cluster, during consolidate stage");
-
+        po.Register("max-explore-pair-percentage", &max_explore_pair_percentage, "maximal constraint pair will be used");
+        po.Register("max-consolidate-pair-percentage", &max_consolidate_pair_percentage, "maximal constraint pair will be used for each cluster, during consolidate stage");
 
         po.Register("min-update-segment", &min_update_segment, "Clustering segments having frames larger than");
         po.Register("target-cluster_num", &target_cluster_num, "Target cluster number as stopping criterion");
@@ -140,13 +139,16 @@ int main(int argc, char *argv[]) {
             ClusterCollectionConstraint segment_clusters(&new_segments);
  
             // perfrom explore starge (active learning for inital cluster construction)
+            int32 max_constraint_pair = speech_segments.Size() * max_explore_pair_percentage;
             segment_clusters.IvectorHacExploreFarthestFirstSearch(ivec_info, config, max_constraint_pair, is_centroid_candidate);
 
-            segment_clusters.InitClustersWithExploredClusters();
-
+            // perform consolidate step
+            int32 max_pair_per_cluster = speech_segments.Size() * max_consolidate_pair_percentage / segment_clusters.explored_clusters_.size();
             if(do_consolidate){
                 segment_clusters.IvectorHacConsolidate(ivec_info, config, max_pair_per_cluster);
             }
+
+            segment_clusters.InitClustersWithExploredClusters();
 
             if(merge_constraint) {
                 segment_clusters.ConstraintBottomUpClusteringIvector(ivec_info, config);
