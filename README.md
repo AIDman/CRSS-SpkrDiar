@@ -1,38 +1,38 @@
 # CRSS Speaker Diarization Toolkit (CRSS-SpkrDiar)
 ## About
-CRSS-SpkDiar is a C++ based speaker diarization toolkit, built on top of famous open source speech recognition platform of [Kaldi](http://kaldi.sourceforge.net/). The main objective of this toolkit is as follow:
+CRSS-SpkDiar is a C++ based speaker diarization toolkit, built on top of famous open source speech recognition platform of [Kaldi](http://kaldi.sourceforge.net/). The main objectives of this toolkit are:
 
   - Simple integration with Kaldi ASR, 
-  - Simple intergration of i-vector training and extraction within Kaldi for Diarization
-  - Simple intergration of DNN within Kaldi for Diarization 
-  - Perform speaker diarization unsupervised/supervised/semi-supervised fasion
-  - Benchmark on open database (AMI meeting corpus, and more)
+  - Simple intergration of i-vector training and extraction within Kaldi for Diarization,
+  - Simple intergration of DNN within Kaldi for Diarization,
+  - Perform speaker diarization unsupervised/supervised/semi-supervised fashion,
+  - Benchmark on open database (AMI meeting corpus, and more).
 
 Authors: [Chengzhu Yu](https://sites.google.com/site/chengzhuyu0/home) and [Navid Shokouhi](https://scholar.google.com/citations?user=DHxzPt8AAAAJ&hl=en).
 
 _We plan to officially realease CRSS-SpkrDiar toolkit around January, 2017. 
 As the current version is not completed, with several missing components,
-we do not recommend you to try it. As long as it is ready, we will include installation guidance and the recipe to 
+we do not recommend you to try it. As soon as it is ready, we will include an installation guide and the recipe to 
 reproduce our results._
 
 ## Current Stage of Development
 ##### _Completed:_
- - Bottom-Up Clustering Using BIC, Symmetric KL divergence
- - Bottom-Up Clustering Using i-vector cosine distance score (CDS).
+ - Bottom-Up Clustering Using BIC, Symmetric KL divergence,
+ - Bottom-Up Clustering Using i-vector cosine distance score (CDS),
  - ILP Clustering with i-vector CDS as distance.
 
 ##### _To Be Completed:_
- - Test and incorporate PLDA, Conditional Bayes, Mahalanobis distance for clustering    
- - Sementation
- - Supervised/Semi-supervised Diarization
- - Generate flexible interface with Kaldi ASR
+ - Test and incorporate PLDA, Conditional Bayes, Mahalanobis distance for clustering,    
+ - Sementation,
+ - Supervised/Semi-supervised Diarization,
+ - Generate flexible interface with Kaldi ASR.
 
 ## Dependencies
   - Kaldi
   - GLPK (if only you want to try ILP)
   
 ## Benchmark Performance
-We evaluate our performance on [AMI meeting corpus](http://groups.inf.ed.ac.uk/ami/download/) and comparing the numbers with those reported in [Pycasp](http://multimedia.icsi.berkeley.edu/scalable-big-data-analysis/pycasp/) from ICSI. Note: To evaluate only the clustering module, the numbers on CRSS-SpkDiar is on top of orace segmentation. We're currently working on to include segmentation.
+We evaluate our performance on [AMI meeting corpus](http://groups.inf.ed.ac.uk/ami/download/) and compare the numbers with those reported in [Pycasp](http://multimedia.icsi.berkeley.edu/scalable-big-data-analysis/pycasp/) from ICSI. Note: To evaluate only the clustering module, the numbers on CRSS-SpkDiar is on top of oracle segmentation. We're currently working to include segmentation.
 
 | Session       |      Pycasp   |   CRSS-SpkDiar (run2.sh) |
 | ------------- | ------------- | -------------   | 
