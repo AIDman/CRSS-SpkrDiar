@@ -27,6 +27,9 @@ Authors: [Chengzhu Yu](https://sites.google.com/site/chengzhuyu0/home) and [Navi
 ##### _To Be Completed:_
  - VAD based segmentation (smoothing)
  - Resementation
+ 
+##### _Furthur Extensions:_
+ - DNN speaker embedding features 
  - Interface with Kaldi ASR
 
 ## Dependencies
