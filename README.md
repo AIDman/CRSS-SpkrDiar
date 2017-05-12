@@ -3,25 +3,30 @@
 CRSS-SpkDiar is a C++ based speaker diarization toolkit, built on top of famous open source speech recognition platform of [Kaldi](http://kaldi.sourceforge.net/). The main objectives of this toolkit are:
 
   - Simple integration with Kaldi ASR, 
-  - Simple intergration of i-vector training and extraction within Kaldi for Diarization,
-  - Simple intergration of DNN within Kaldi for Diarization,
+  - Simple intergration of i-vector modules within Kaldi for Diarization,
+  - Simple intergration of DNN modules within Kaldi for Diarization,
   - Perform speaker diarization unsupervised/supervised/semi-supervised fashion,
-  - Benchmark on open database (AMI meeting corpus, and more).
+  - Benchmark on open database (AMI meeting corpus, and Apollo-MCC corpus).
 
 Authors: [Chengzhu Yu](https://sites.google.com/site/chengzhuyu0/home) and [Navid Shokouhi](https://scholar.google.com/citations?user=DHxzPt8AAAAJ&hl=en).
 
 
 ## Current Stage of Development
 ##### _Completed:_
- - Bottom-Up Clustering Using BIC, Symmetric KL divergence,
- - Bottom-Up Clustering Using i-vector cosine distance score (CDS),
- - ILP Clustering with i-vector CDS as distance.
+ - GMM based VAD segmentation
+ - BIC segmentation (optional)
+ - Bottom-Up Clustering
+   - BIC distance 
+   - KL divergence
+   - i-vector cosine distance
+   - i-vector Mahalanobis 
+   - i-vector PLDA (optional)
+ - Bottom-Up Clustering Using i-vector cosine distance score (CDS)
+ - Interger linear programming (ILP) Clustering
 
 ##### _To Be Completed:_
- - Test and incorporate PLDA, Conditional Bayes, Mahalanobis distance for clustering,    
- - Sementation,
- - Supervised/Semi-supervised Diarization,
- - Generate flexible interface with Kaldi ASR.
+ - Resementation
+ - Interface with Kaldi ASR
 
 ## Dependencies
   - Kaldi
