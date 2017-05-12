@@ -25,8 +25,9 @@ Authors: [Chengzhu Yu](https://sites.google.com/site/chengzhuyu0/home) and [Navi
  - Interger linear programming (ILP) Clustering
 
 ##### _To Be Completed:_
- - VAD based segmentation (smoothing)
+ - VAD based segmentation (viterbi)
  - Resementation
+ - Evaluations
  
 ##### _Furthur Extensions:_
  - DNN speaker embedding features 
