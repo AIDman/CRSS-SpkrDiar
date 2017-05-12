@@ -13,7 +13,7 @@ Authors: [Chengzhu Yu](https://sites.google.com/site/chengzhuyu0/home) and [Navi
 
 ## Current Stage of Development
 ##### _Completed:_
- - GMM based VAD segmentation
+ - VAD (GMM based)
  - BIC segmentation (optional)
  - Bottom-Up Clustering
    - BIC distance 
@@ -25,6 +25,7 @@ Authors: [Chengzhu Yu](https://sites.google.com/site/chengzhuyu0/home) and [Navi
  - Interger linear programming (ILP) Clustering
 
 ##### _To Be Completed:_
+ - VAD based segmentation (smoothing)
  - Resementation
  - Interface with Kaldi ASR
 
